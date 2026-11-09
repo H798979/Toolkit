@@ -1,0 +1,261 @@
+/* All appearance rules are gated by plugin-owned classes; disabling unloads them. */
+body.ctk-active.ctk-sidebar:not(.is-mobile):not(.show-ribbon)
+  .mod-sidedock.mod-left-split:not(.is-sidedock-collapsed) {
+  padding-left: 0 !important;
+  margin-left: var(--ctk-sidebar-inset, 8px) !important;
+}
+body.ctk-active.ctk-sidebar:not(.is-mobile).show-ribbon:not(.hover-ribbon)
+  .workspace-ribbon:is(.mod-primary, .mod-left) {
+  position: relative;
+  z-index: calc(var(--layer-sidedock) + 1) !important;
+  border-right: none;
+}
+/* The PDF tab already carries the file title and its Iconic icon. */
+body.ctk-active.ctk-compact-header:not(.is-phone) .mod-root .workspace-tabs:not(.mod-stacked)
+  > .workspace-tab-container > .workspace-leaf > .workspace-leaf-content[data-type="pdf"] > .view-header {
+  display: none;
+}
+body.ctk-active.ctk-compact-header:not(.is-phone) .mod-root .workspace-tabs:not(.mod-stacked)
+  > .workspace-tab-header-container .workspace-tab-header.is-active[data-type="pdf"] {
+  --tab-max-width: 34rem;
+  flex-grow: 2;
+}
+body.ctk-active.ctk-compact-header .mod-root .workspace-leaf-content[data-type="pdf"] > .view-header .view-header-title-parent {
+  display: none;
+}
+body.ctk-active.ctk-sf-pro {
+  --font-interface-override: "SF Pro", "SF Pro Display", "SF Pro Text", -apple-system, sans-serif;
+  --font-text-override: "SF Pro", "SF Pro Text", -apple-system, sans-serif;
+  --font-monospace-override: "SF Mono", ui-monospace, monospace;
+}
+body.ctk-active.ctk-quotes :is(.markdown-preview-view blockquote, .markdown-preview-view blockquote p,
+  .markdown-source-view.mod-cm6 .HyperMD-quote, .markdown-source-view.mod-cm6 .cm-quote) {
+  color: var(--ctk-quote-color);
+}
+body.ctk-active.ctk-quotes .markdown-preview-view blockquote { border-left-color: var(--ctk-quote-bar); }
+body.ctk-active.ctk-quotes .markdown-source-view.mod-cm6 {
+  --blockquote-border-color: var(--ctk-quote-bar);
+}
+body.ctk-active.ctk-math mjx-container { font-size: var(--ctk-math-scale, 128%) !important; }
+body.ctk-active.ctk-math :is(.markdown-preview-view, .markdown-source-view.mod-cm6) mjx-container[display="true"] { margin: 0.6em 0; }
+
+/* Keep note styling and line width independent, and scope them to Markdown panes. */
+@media screen {
+  body.ctk-active.ctk-full-width-notes .workspace-leaf-content[data-type="markdown"]
+    :is(.view-content > .markdown-reading-view > .markdown-preview-view, .view-content > .markdown-source-view.mod-cm6) {
+    --file-line-width: 100%;
+  }
+
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content
+    > :is(.markdown-reading-view, .markdown-source-view.mod-cm6.is-live-preview) {
+    --ctk-academic-h1: max(2.125rem, calc(var(--h1-size, 1.5rem) * 1.12));
+    --ctk-academic-h2: max(1.625rem, calc(var(--h2-size, 1.25rem) * 1.10));
+    --ctk-academic-h3: max(1.375rem, calc(var(--h3-size, 1rem) * 1.08));
+    --ctk-academic-title: max(2.375rem, calc(var(--inline-title-size, 1.5rem) * 1.12));
+    --ctk-academic-accent: var(--interactive-accent);
+  }
+
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content
+    :is(.markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .mod-header,
+        .markdown-source-view.mod-cm6.is-live-preview > .cm-editor > .cm-scroller > .cm-sizer)
+    > .inline-title:not([data-level]) {
+    font-size: var(--ctk-academic-title);
+    font-weight: 700;
+    line-height: 1.2;
+    padding-block-end: 0.32em;
+    border-block-end: 1px solid var(--background-modifier-border);
+  }
+
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content :is(
+    .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .el-h3 > h3,
+    .markdown-source-view.mod-cm6.is-live-preview .cm-contentContainer > .cm-content > .HyperMD-header-3
+  ) {
+    font-size: var(--ctk-academic-h3);
+    --font-weight: 650;
+    font-weight: var(--font-weight);
+    line-height: 1.35;
+  }
+
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content :is(
+    .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .el-h2 > h2,
+    .markdown-source-view.mod-cm6.is-live-preview .cm-contentContainer > .cm-content > .HyperMD-header-2
+  ) {
+    --ctk-academic-indent: calc(2px + 0.65rem);
+    font-size: var(--ctk-academic-h2);
+    --font-weight: 650;
+    font-weight: var(--font-weight);
+    line-height: 1.3;
+    padding-inline-start: 0.65rem;
+    border-inline-start: 2px solid var(--ctk-academic-accent);
+  }
+
+  /* Existing Fast Text Color H2 headings also serve as section headings. */
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content :is(
+    .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .el-h1 > h1,
+    .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .el-h2 > h2:has(span:is([class^="ftc-color-"], [class*=" ftc-color-"])),
+    .markdown-source-view.mod-cm6.is-live-preview .cm-contentContainer > .cm-content > .HyperMD-header-1,
+    .markdown-source-view.mod-cm6.is-live-preview .cm-contentContainer > .cm-content > .HyperMD-header-2:has(span:is([class^="ftc-color-"], [class*=" ftc-color-"]))
+  ) {
+    --ctk-academic-indent: calc(4px + 0.95rem);
+    font-size: var(--ctk-academic-h1);
+    --font-weight: 700;
+    font-weight: var(--font-weight);
+    line-height: 1.24;
+    padding: 0.24em 0.95rem;
+    border-inline-start: 4px solid var(--ctk-academic-accent);
+    border-radius: var(--radius-s);
+    background-color: var(--background-secondary);
+    background-color: color-mix(in srgb, var(--ctk-academic-accent) 11%, var(--background-primary));
+    overflow-wrap: anywhere;
+  }
+
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content
+    .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > :is(.el-h1, .el-h2)
+    > :is(h1, h2) > .heading-collapse-indicator {
+    margin-inline-start: calc(-22px - var(--ctk-academic-indent));
+  }
+
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content
+    .markdown-source-view.mod-cm6.is-live-preview .cm-contentContainer > .cm-content
+    > :is(.HyperMD-header-1, .HyperMD-header-2) > .cm-fold-indicator .collapse-indicator {
+    inset-inline-end: var(--ctk-academic-indent);
+  }
+}
+
+body.ctk-active.ctk-typography .nav-files-container .nav-folder:not(.mod-root) {
+  --ctk-folder-size: var(--ctk-folder-size-1);
+  --ctk-folder-weight: var(--ctk-folder-weight-1);
+}
+body.ctk-active.ctk-typography .nav-files-container .nav-folder:not(.mod-root) .nav-folder:not(.mod-root) {
+  --ctk-folder-size: var(--ctk-folder-size-2);
+  --ctk-folder-weight: var(--ctk-folder-weight-2);
+}
+body.ctk-active.ctk-typography .nav-files-container .nav-folder:not(.mod-root) .nav-folder:not(.mod-root) .nav-folder:not(.mod-root) {
+  --ctk-folder-size: var(--ctk-folder-size-3);
+  --ctk-folder-weight: var(--ctk-folder-weight-3);
+}
+body.ctk-active.ctk-typography .nav-files-container .nav-folder:not(.mod-root) .nav-folder:not(.mod-root) .nav-folder:not(.mod-root) .nav-folder:not(.mod-root) {
+  --ctk-folder-size: var(--ctk-folder-size-4);
+  --ctk-folder-weight: var(--ctk-folder-weight-4);
+}
+body.ctk-active.ctk-typography .nav-folder:not(.mod-root) > .nav-folder-title .nav-folder-title-content {
+  font-size: var(--ctk-folder-size) !important;
+  font-weight: var(--ctk-folder-weight) !important;
+  letter-spacing: -0.003em;
+}
+body.ctk-active .nav-files-container :is(.nav-folder-title-content, .nav-file-title-content).ctk-colored-label {
+  color: var(--ctk-label-color) !important;
+}
+body.ctk-active .ctk-colored-link, body.ctk-active .ctk-colored-link * { color: var(--ctk-link-color) !important; }
+
+body.ctk-active.ctk-pdf-dark.theme-dark :is(.pdfViewer .canvasWrapper canvas, .pdf-thumbnail-view canvas) {
+  filter: invert(var(--ctk-pdf-invert, 0.9)) hue-rotate(180deg) contrast(var(--ctk-pdf-contrast, 0.95));
+}
+body.ctk-active.ctk-pdf-dark.theme-dark .pdfViewer .page {
+  border-color: var(--background-modifier-border);
+  box-shadow: none;
+}
+body.ctk-active.ctk-pdf-dark.theme-dark .pdfViewer .textLayer ::selection { background: hsla(var(--color-accent-hsl), 0.35); }
+body.ctk-active.ctk-pdf-dark.theme-dark .pdf-no-invert :is(.pdfViewer .canvasWrapper canvas, .pdf-thumbnail-view canvas) { filter: none; }
+body.ctk-active.ctk-webview.theme-dark :is(webview, .webviewer-content webview) { background-color: var(--background-primary) !important; }
+
+/* Only an explicit embed flag or a remembered per-image choice changes an image. */
+body.ctk-active.theme-dark :is(.markdown-preview-view, .markdown-source-view) img[alt*="plate" i] {
+  filter: none;
+  background-color: var(--ctk-plate-bg, #e8e8e8);
+  padding: 0.6em;
+  border-radius: var(--radius-s);
+  box-sizing: border-box;
+}
+
+body.ctk-active.ctk-nn-pdf.theme-dark .nn-list-pane [data-drag-type="file"][data-path$=".pdf" i] .nn-file-thumbnail-img {
+  filter: invert(var(--ctk-pdf-invert, 0.9)) hue-rotate(180deg) contrast(var(--ctk-pdf-contrast, 0.95));
+}
+
+/* Explicit choices win over theme defaults, note classes and embed alt flags. */
+body.ctk-active.ctk-overrides img.ctk-light {
+  filter: none !important; background-color: transparent !important; padding: 0 !important;
+}
+body.ctk-active.ctk-overrides img.ctk-dark {
+  filter: invert(var(--ctk-image-invert, 0.92)) hue-rotate(180deg) contrast(var(--ctk-image-contrast, 1)) !important;
+  background-color: transparent !important; padding: 0 !important;
+}
+body.ctk-active.ctk-overrides img.ctk-plate {
+  filter: none !important; background-color: var(--ctk-plate-bg) !important;
+  padding: 0.6em !important; border-radius: var(--radius-s); box-sizing: border-box;
+}
+body.ctk-active.ctk-overrides .ctk-pdf-light :is(.pdfViewer .canvasWrapper canvas, .pdf-thumbnail-view canvas) { filter: none !important; }
+body.ctk-active.ctk-overrides .ctk-pdf-force-dark :is(.pdfViewer .canvasWrapper canvas, .pdf-thumbnail-view canvas),
+body.ctk-active.ctk-overrides .nn-list-pane .nn-file-thumbnail-img.ctk-pdf-thumb.ctk-dark {
+  filter: invert(var(--ctk-pdf-invert, 0.9)) hue-rotate(180deg) contrast(var(--ctk-pdf-contrast, 0.95)) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.ctk-active :is(.markdown-preview-view, .markdown-source-view) img { transition: none; }
+}
+.ctk-transfer textarea { width: 100%; min-height: 20em; font-family: var(--font-monospace); resize: vertical; }
+.ctk-settings h3 { margin-top: 1.8em; }
+.ctk-settings .ctk-number-input { width: 6em; text-align: right; }
+.ctk-settings .ctk-number-input[aria-invalid="true"] { border-color: var(--text-error); }
+
+/* Background palette adapted from darker-theme.css. */
+body.ctk-active.ctk-darker.ctk-darker-dark.theme-dark {
+  --color-base-00: color-mix(in srgb, black var(--ctk-darker-amount), #1e1e1e) !important;
+  --color-base-05: color-mix(in srgb, black var(--ctk-darker-amount), #212121) !important;
+  --color-base-10: color-mix(in srgb, black var(--ctk-darker-amount), #242424) !important;
+  --color-base-20: color-mix(in srgb, black var(--ctk-darker-amount), #262626) !important;
+  --color-base-25: color-mix(in srgb, black var(--ctk-darker-amount), #2a2a2a) !important;
+  --color-base-30: color-mix(in srgb, black var(--ctk-darker-amount), #363636) !important;
+  --color-base-35: color-mix(in srgb, black var(--ctk-darker-amount), #3f3f3f) !important;
+  --color-base-40: color-mix(in srgb, black var(--ctk-darker-amount), #555555) !important;
+
+  
+  --background-primary:       var(--color-base-00) !important;
+  --background-primary-alt:   var(--color-base-10) !important;
+  --background-secondary:     var(--color-base-20) !important;
+  --background-secondary-alt: var(--color-base-25) !important;
+
+  
+  --workspace-background-translucent: var(--background-secondary) !important;
+}
+
+
+
+body.ctk-active.ctk-darker.ctk-darker-light.theme-light {
+  --color-base-00: color-mix(in srgb, black var(--ctk-darker-amount), #ffffff) !important;
+  --color-base-05: color-mix(in srgb, black var(--ctk-darker-amount), #fcfcfc) !important;
+  --color-base-10: color-mix(in srgb, black var(--ctk-darker-amount), #fafafa) !important;
+  --color-base-20: color-mix(in srgb, black var(--ctk-darker-amount), #f6f6f6) !important;
+  --color-base-25: color-mix(in srgb, black var(--ctk-darker-amount), #e3e3e3) !important;
+  --color-base-30: color-mix(in srgb, black var(--ctk-darker-amount), #e0e0e0) !important;
+  --color-base-35: color-mix(in srgb, black var(--ctk-darker-amount), #d4d4d4) !important;
+  --color-base-40: color-mix(in srgb, black var(--ctk-darker-amount), #bdbdbd) !important;
+
+  --background-primary:       var(--color-base-00) !important;
+  --background-primary-alt:   var(--color-base-10) !important;
+  --background-secondary:     var(--color-base-20) !important;
+  --background-secondary-alt: var(--color-base-25) !important;
+}
+
+
+
+body.ctk-active.ctk-darker.ctk-darker-light.theme-light.theme-light.theme-light.theme-light.theme-light {
+  --modal-background: color-mix(in srgb, var(--background-primary) var(--ctk-modal-opacity, 85%), transparent) !important;
+  --settings-background: var(--background-primary) !important;
+  --setting-items-background: var(--background-primary) !important;
+  --menu-background: var(--background-secondary) !important;
+  --prompt-background: var(--background-primary) !important;
+}
+
+body.ctk-active.ctk-darker.ctk-darker-dark.theme-dark.theme-dark.theme-dark.theme-dark.theme-dark {
+  --modal-background: color-mix(in srgb, var(--background-secondary) var(--ctk-modal-opacity, 65%), transparent) !important;
+  --settings-background: var(--background-secondary) !important;
+  --setting-items-background: var(--background-secondary) !important;
+  --menu-background: var(--background-secondary) !important;
+  --prompt-background: var(--background-primary) !important;
+}
+
+
+body.ctk-active.ctk-darker.ctk-darker-light.colorful-frame.theme-light .mod-sidedock.mod-left-split,
+body.ctk-active.ctk-darker.ctk-darker-light.colorful-frame.theme-light .mod-sidedock.mod-right-split {
+  background-color: color-mix(in srgb, var(--background-secondary), var(--color-accent) 2%) !important;
+}
