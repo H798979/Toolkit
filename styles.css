@@ -39,6 +39,40 @@ body.ctk-active.ctk-quotes .markdown-source-view.mod-cm6 {
 body.ctk-active.ctk-math mjx-container { font-size: var(--ctk-math-scale, 128%) !important; }
 body.ctk-active.ctk-math :is(.markdown-preview-view, .markdown-source-view.mod-cm6) mjx-container[display="true"] { margin: 0.6em 0; }
 
+@media screen {
+  body.ctk-active .workspace-leaf-content[data-type="markdown"] .ctk-heading-colored {
+    --ctk-academic-accent: var(--ctk-heading-color);
+    color: var(--ftc-color, var(--ctk-heading-color)) !important;
+  }
+  /* Fast Text Color defines --ftc-color on explicitly marked text and its controls. */
+  body.ctk-active .workspace-leaf-content[data-type="markdown"] .ctk-heading-colored
+    :is(span, a, strong, b, em, i, mark, font):not(.collapse-indicator, .collapse-indicator *, .cm-fold-indicator,
+      .iconic-icon, .iconic-icon *, .iconic-sidekick, .iconic-sidekick *) {
+    color: var(--ftc-color, var(--ctk-heading-color)) !important;
+  }
+  body.ctk-active .workspace-leaf-content[data-type="markdown"] .ctk-heading-icon {
+    position: relative;
+    padding-inline-end: max(2.1em, 2.1rem) !important;
+  }
+  body.ctk-active .workspace-leaf-content[data-type="markdown"] .ctk-heading-icon::after {
+    content: "";
+    position: absolute;
+    inset-inline-end: 0.5rem;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    inline-size: 0.85em;
+    block-size: 0.85em;
+    background-color: currentColor;
+    mask: var(--ctk-heading-icon) center / contain no-repeat;
+    pointer-events: none;
+  }
+}
+.ctk-heading-icon-option {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
 /* Keep note styling and line width independent, and scope them to Markdown panes. */
 @media screen {
   body.ctk-active.ctk-full-width-notes .workspace-leaf-content[data-type="markdown"]
@@ -46,7 +80,7 @@ body.ctk-active.ctk-math :is(.markdown-preview-view, .markdown-source-view.mod-c
     --file-line-width: 100%;
   }
 
-  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"]:not(:where(.ctk-exam-note)) > .view-content
     > :is(.markdown-reading-view, .markdown-source-view.mod-cm6.is-live-preview) {
     --ctk-academic-h1: max(2.125rem, calc(var(--h1-size, 1.5rem) * 1.12));
     --ctk-academic-h2: max(1.625rem, calc(var(--h2-size, 1.25rem) * 1.10));
@@ -55,7 +89,7 @@ body.ctk-active.ctk-math :is(.markdown-preview-view, .markdown-source-view.mod-c
     --ctk-academic-accent: var(--interactive-accent);
   }
 
-  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"]:not(:where(.ctk-exam-note)) > .view-content
     :is(.markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .mod-header,
         .markdown-source-view.mod-cm6.is-live-preview > .cm-editor > .cm-scroller > .cm-sizer)
     > .inline-title:not([data-level]) {
@@ -66,7 +100,7 @@ body.ctk-active.ctk-math :is(.markdown-preview-view, .markdown-source-view.mod-c
     border-block-end: 1px solid var(--background-modifier-border);
   }
 
-  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content :is(
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"]:not(:where(.ctk-exam-note)) > .view-content :is(
     .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .el-h3 > h3,
     .markdown-source-view.mod-cm6.is-live-preview .cm-contentContainer > .cm-content > .HyperMD-header-3
   ) {
@@ -76,7 +110,7 @@ body.ctk-active.ctk-math :is(.markdown-preview-view, .markdown-source-view.mod-c
     line-height: 1.35;
   }
 
-  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content :is(
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"]:not(:where(.ctk-exam-note)) > .view-content :is(
     .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .el-h2 > h2,
     .markdown-source-view.mod-cm6.is-live-preview .cm-contentContainer > .cm-content > .HyperMD-header-2
   ) {
@@ -90,7 +124,7 @@ body.ctk-active.ctk-math :is(.markdown-preview-view, .markdown-source-view.mod-c
   }
 
   /* Existing Fast Text Color H2 headings also serve as section headings. */
-  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content :is(
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"]:not(:where(.ctk-exam-note)) > .view-content :is(
     .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .el-h1 > h1,
     .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .el-h2 > h2:has(span:is([class^="ftc-color-"], [class*=" ftc-color-"])),
     .markdown-source-view.mod-cm6.is-live-preview .cm-contentContainer > .cm-content > .HyperMD-header-1,
@@ -109,16 +143,97 @@ body.ctk-active.ctk-math :is(.markdown-preview-view, .markdown-source-view.mod-c
     overflow-wrap: anywhere;
   }
 
-  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"]:not(:where(.ctk-exam-note)) > .view-content
     .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > :is(.el-h1, .el-h2)
     > :is(h1, h2) > .heading-collapse-indicator {
     margin-inline-start: calc(-22px - var(--ctk-academic-indent));
   }
 
-  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"] > .view-content
+  body.ctk-active.ctk-academic-notes .workspace-leaf-content[data-type="markdown"]:not(:where(.ctk-exam-note)) > .view-content
     .markdown-source-view.mod-cm6.is-live-preview .cm-contentContainer > .cm-content
     > :is(.HyperMD-header-1, .HyperMD-header-2) > .cm-fold-indicator .collapse-indicator {
     inset-inline-end: var(--ctk-academic-indent);
+  }
+}
+
+/* Style only the top-level headings of matching notes. Keep Obsidian's own fold controls. */
+@media screen {
+  body.ctk-active.theme-light .workspace-leaf-content.ctk-exam-note {
+    --ctk-exam-ink-base: #121317;
+    --ctk-exam-hue-share: 27%;
+  }
+
+  body.ctk-active :is(
+    .workspace-leaf-content.ctk-exam-note[data-type="markdown"] > .view-content > .markdown-reading-view >
+      .markdown-preview-view > .markdown-preview-sizer > :is(.el-h1, .el-h2, .el-h3) > :is(h1, h2, h3),
+    .workspace-leaf-content.ctk-exam-note[data-type="markdown"] > .view-content > .markdown-source-view.mod-cm6.is-live-preview >
+      .cm-editor > .cm-scroller > .cm-sizer > .cm-contentContainer > .cm-content > :is(.HyperMD-header-1, .HyperMD-header-2, .HyperMD-header-3)
+  ) {
+    background-color: color-mix(in srgb, var(--text-normal) 5%, var(--background-primary));
+    background-clip: padding-box;
+    box-shadow: inset 0 -1px var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    padding: 0.28em 0.7rem;
+    padding-inline-start: 1.9rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+
+    &:is(h1, .HyperMD-header-1) {
+      --ctk-exam-chapter-color: var(--ctk-heading-color, var(--ctk-heading-default-color, var(--interactive-accent)));
+      --ctk-exam-chapter-ink: color-mix(in oklab, var(--ctk-exam-chapter-color) var(--ctk-exam-hue-share, 44%), var(--ctk-exam-ink-base, var(--text-normal)));
+      background-color: color-mix(in srgb, var(--ctk-exam-chapter-ink) 9%, var(--background-primary));
+      box-shadow: inset 3px 0 color-mix(in srgb, var(--ctk-exam-chapter-ink) 70%, var(--background-primary));
+      padding-block: 0.42em;
+      font-size: max(1.5em, var(--h1-size));
+      --font-weight: 700;
+      font-weight: var(--font-weight);
+      color: var(--ctk-exam-chapter-ink) !important;
+
+      & :is(span, a, strong, b, em, i, mark, font):not(.collapse-indicator, .collapse-indicator *, .cm-fold-indicator,
+        .iconic-icon, .iconic-icon *, .iconic-sidekick, .iconic-sidekick *) {
+        color: color-mix(in oklab, var(--ftc-color, var(--ctk-exam-chapter-color)) var(--ctk-exam-hue-share, 44%), var(--ctk-exam-ink-base, var(--text-normal))) !important;
+      }
+
+      & > strong, & > .cm-header-1.cm-strong { font-weight: inherit; }
+    }
+
+    &:is(h2, .HyperMD-header-2) {
+      font-size: max(1.12em, var(--h2-size));
+      --font-weight: 650;
+      font-weight: var(--font-weight);
+    }
+
+    &:is(h3, .HyperMD-header-3) {
+      background-color: color-mix(in srgb, var(--text-normal) 3.5%, var(--background-primary));
+      font-size: max(1em, var(--h3-size));
+      --font-weight: 600;
+      font-weight: var(--font-weight);
+    }
+
+    & > .heading-collapse-indicator,
+    & > .cm-fold-indicator > .collapse-indicator {
+      --collapse-icon-color: var(--text-muted);
+      --collapse-icon-color-collapsed: var(--text-normal);
+      opacity: 1;
+    }
+
+    & > .heading-collapse-indicator {
+      margin-inline-start: -1.55rem;
+      padding-inline: 0.2rem;
+    }
+  }
+
+  body.ctk-active .workspace-leaf-content.ctk-exam-note[data-type="markdown"] > .view-content >
+    .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer {
+    & > .el-h1 > h1 { margin-block: 1rem 0.5rem; }
+    & > :is(.el-h2, .el-h3) > :is(h2, h3) { margin-block: 0.32rem; }
+    & > :is(.el-ul, .el-ol) li + li { margin-block-start: 0.18em; }
+  }
+
+  body.ctk-active .workspace-leaf-content.ctk-exam-note[data-type="markdown"] > .view-content >
+    .markdown-source-view.mod-cm6.is-live-preview > .cm-editor > .cm-scroller > .cm-sizer > .cm-contentContainer > .cm-content {
+    & > .HyperMD-header-1 { border-block: 0.85rem solid transparent; border-block-end-width: 0.35rem; }
+    & > :is(.HyperMD-header-2, .HyperMD-header-3) { border-block: 2px solid transparent; }
   }
 }
 
@@ -146,7 +261,9 @@ body.ctk-active.ctk-typography .nav-folder:not(.mod-root) > .nav-folder-title .n
 body.ctk-active .nav-files-container :is(.nav-folder-title-content, .nav-file-title-content).ctk-colored-label {
   color: var(--ctk-label-color) !important;
 }
-body.ctk-active .ctk-colored-link, body.ctk-active .ctk-colored-link * { color: var(--ctk-link-color) !important; }
+body.ctk-active .ctk-colored-link, body.ctk-active .ctk-colored-link * {
+  color: var(--ftc-color, var(--ctk-link-color)) !important;
+}
 
 body.ctk-active.ctk-pdf-dark.theme-dark :is(.pdfViewer .canvasWrapper canvas, .pdf-thumbnail-view canvas) {
   filter: invert(var(--ctk-pdf-invert, 0.9)) hue-rotate(180deg) contrast(var(--ctk-pdf-contrast, 0.95));

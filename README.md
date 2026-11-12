@@ -1,11 +1,11 @@
-# Toolkit — 1.4.0
+# Toolkit — 1.7.0
 
 Ein flytjanleg Obsidian-viðbót sem sameinar útlit og virkni úr CSS-snippunum þínum og Top-Level Icon Name Sync. Stillingar og val fyrir skrár vistast í viðbótarmöppunni. Ekki þarf að byggja eða þýða kóðann.
 
 ## Setja upp
 
-1. Afþjappaðu `cupertino-toolkit-1.4.0.zip`.
-2. Afritaðu möppuna `cupertino-toolkit` í `<safnið þitt>/.obsidian/plugins/`. Ef safnið notar annað stillingamöppuheiti en `.obsidian` skaltu nota það í staðinn.
+1. Sæktu `main.js`, `manifest.json` og `styles.css` úr [Toolkit 1.7.0](https://github.com/H798979/cupertino-toolkit/releases/tag/1.7.0).
+2. Settu skrárnar í `<safnið þitt>/.obsidian/plugins/cupertino-toolkit/`. Ef safnið notar annað stillingamöppuheiti en `.obsidian` skaltu nota það í staðinn.
 3. Í Obsidian skaltu fara í **Settings → Community plugins**, endurhlaða viðbótalistanum eða endurræsa Obsidian og virkja **Toolkit**. Community plugins þurfa að vera leyfð.
 4. Slökktu á þessum eldri CSS-snippum í **Settings → Appearance → CSS snippets**: `cupertino-sidebar-spacing`, `darker-theme`, `iconic-colored-names`, `pdf-dark-mode` og `sf-pro`.
 5. Slökktu á **Top-Level Icon Name Sync**. Ef **Image Dark Toggle** er í safninu skaltu slökkva á því eftir að Toolkit hefur verið virkjað einu sinni; vistað val fyrir myndir og PDF er lesið inn við fyrstu ræsingu Toolkit.
@@ -15,16 +15,36 @@ Upprunalegu skránum hefur ekki verið breytt. Þú getur slökkt á Toolkit og 
 
 ## Uppfæra úr eldri útgáfu
 
-Slökktu á Toolkit, afritaðu skrárnar úr nýja pakkanum yfir skrárnar í núverandi `cupertino-toolkit`-möppu og virkjaðu viðbótina aftur. Haltu `data.json`; hún inniheldur stillingarnar þínar. Eldri sameiginlega dimmingarprósentan flyst yfir í bæði ljósu og dökku stillinguna. Sjálfvirkur umsnúningur mynda og myndasmámynda er fjarlægður, líka ef hann var virkur í eldri stillingum. Handvirkt val sem þú hafðir vistað fyrir einstakar myndir varðveitist og má endurstilla undir **Saved image and PDF choices**.
+Slökktu á Toolkit, afritaðu skrárnar úr nýju útgáfunni yfir skrárnar í núverandi `cupertino-toolkit`-möppu og virkjaðu viðbótina aftur. Haltu `data.json`; hún inniheldur stillingarnar þínar. Eldri sameiginlega dimmingarprósentan flyst yfir í bæði ljósu og dökku stillinguna. Sjálfvirkur umsnúningur mynda og myndasmámynda er fjarlægður, líka ef hann var virkur í eldri stillingum. Handvirkt val sem þú hafðir vistað fyrir einstakar myndir varðveitist og má endurstilla undir **Saved image and PDF choices**.
 
 ## Academic Notes og full breidd
 
-Opnaðu **Settings → Toolkit → Markdown notes**. Báðir rofar byrja slökktir og vistast sérstaklega í hverju safni.
+Opnaðu **Settings → Toolkit → Markdown notes**. Rofarnir byrja slökktir og vistast sérstaklega í hverju safni.
 
 - **Academic Notes** stækkar skjalatitilinn og fyrirsagnir á stigum H1, H2 og H3 í **Reading view** og **Live Preview**. H1 fær litaða rönd og mildan bakgrunn, H2 fær mjórri rönd og H3 fær þyngra letur. H2 með lit frá **Fast Text Color** fær sama kaflaútlit og H1 og heldur textalitnum sínum.
 - **Full-width notes** nýtir breidd glósuflatarins með spássíum þemans, líka þegar **Readable line length** er virkt. Þegar slökkt er á rofanum ræður Obsidian aftur breiddinni.
 
 Útlitið gildir sjálfkrafa um Markdown-glósur í safninu. Í nýrri glósu notarðu `#` fyrir aðalkafla, `##` fyrir undirkafla og `###` fyrir smærri liði. Skráarheitið birtist ef kveikt er á **Settings → Appearance → Show inline title**.
+
+## Exam Notes
+
+Kveiktu á **Settings → Toolkit → Markdown notes → Exam Notes**. Útlitið gildir sjálfgefið um Markdown-glósur í `Eksamen` og undirmöppum. Í **Exam Notes path** geturðu valið aðra möppu eða eina `.md` skrá með slóð miðað við rót safnsins. Auð slóð virkjar útlitið hvergi.
+
+Í **Reading view** og **Live Preview** halda H1-fyrirsagnir sínum litbrigðum í dempaðri tónum. H2 og H3 fá mildan bakgrunn og sýnilegar felliörvar þegar kveikt er á **Fold heading** í Obsidian. Markdown-textinn og vistaðir litir haldast óbreyttir. Ef **Academic Notes** er líka virkt hefur **Exam Notes** forgang í glósunum sem falla undir valda slóð.
+
+## Mismunandi deyfing á hverju tæki
+
+Opnaðu **Settings → Toolkit → Sidebar and background** og kveiktu á **Use device-specific dimming**. Stilltu svo **Dark theme dimming (%)** og **Light theme dimming (%)** á hverju tæki fyrir sig. Gildin vistast fyrir þetta safn á tækinu og fara ekki með samstillingu eða útflutningi Toolkit. Slökktu á rofanum til að nota sameiginlegu prósenturnar aftur.
+
+## Litur og tákn á fyrirsögn
+
+Opnaðu **Settings → Toolkit → Markdown notes → Heading defaults → Configure** til að velja sjálfgefna stærð, lit, leturþyngd, undirstrikun og yfirstrikun fyrir hvert stig frá H1 til H6. Veldu **Save defaults** til að nota sniðið í glósum safnsins. Auðir reitir fylgja **Academic Notes** eða þemanu og **Reset this level** endurstillir valið stig.
+
+Hægrismelltu á skjalatitil eða fyrirsögn frá H1 til H6 og veldu **Toolkit: Edit heading color and icon** til að stilla litinn á þeirri fyrirsögn. Í **Live Preview** geturðu líka sett bendilinn í fyrirsögnina og keyrt sömu skipun úr skipanaglugganum. Veldu lit eða sláðu inn hex-kóða. Veldu tákn úr táknasafni Obsidian og ýttu á **Save**. Táknið birtist hægra megin.
+
+Tæmdu litareitinn til að nota sjálfgefna litinn og notaðu **Remove icon** til að fjarlægja táknið. Valið birtist í **Reading view** og **Live Preview**, óháð **Academic Notes**. Það vistast í Toolkit fyrir glósuna og texta fyrirsagnarinnar.
+
+Litir sem eru settir með **Fast Text Color** hafa forgang á merktum texta. Toolkit-liturinn gildir áfram um ómerktan fyrirsagnartexta og kaflaröndina í **Academic Notes**.
 
 ## Nafnalitir og tungumál
 
@@ -125,7 +145,7 @@ Innfluttu kortin varðveita 223 skráar-/möppuslóðir, eina slóðaforskeytisr
 - `manifest.json`: upplýsingar fyrir Obsidian.
 - `styles.css`: sameinaðar útlitsreglur.
 - `versions.json`: lágmarksútgáfa Obsidian.
-- `README-IS.md`: þessar leiðbeiningar.
+- `README.md`: þessar leiðbeiningar.
 - `data.json`: verður til við fyrstu ræsingu; afritaðu hana með þegar þú flytur eigin stillingar.
 
 Byggt á þínum snippum og Top-Level Icon Name Sync (upprunalega merkt „Claudian“). Vistuð mynd-/PDF-valhegðun var samhæfð við Image Dark Toggle sem snippið vísaði í.

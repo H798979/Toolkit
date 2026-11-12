@@ -1,6 +1,9 @@
 'use strict';
 
-const { Plugin, PluginSettingTab, Setting, Menu, Modal, Notice, TFile, TFolder } = require('obsidian');
+const { Plugin, PluginSettingTab, Setting, Menu, Modal, SuggestModal, Notice, TFile, TFolder,
+  editorInfoField, editorLivePreviewField, getIcon, getIconIds, setIcon } = require('obsidian');
+const { StateEffect } = require('@codemirror/state');
+const { Decoration, ViewPlugin } = require('@codemirror/view');
 
 // Built from all five supplied Iconic CSS versions. Newest definitions win.
 const LEGACY = {"paths":{"Dat 110":"yellow","Dat 110/Arkitektúr":"purple","Dat 110/Arkitektúr/ChordDHT":"red","Dat 110/Arkitektúr/P-S MOM":"cyan","Dat 110/Arkitektúr/Pålitelighet":"blue","Dat 110/Arkitektúr/Replikering":"orange","Dat 110/Hugtök":"cyan","Dat 110/Prosjektene":"red","Dat 110/Sikkerhet":"green","Dat 110/Sikkerhet/Digital Signature":"blue","Dat 110/TCP IP":"blue","Dat 110/TCP IP/1 - Applikasjon":"red","Dat 110/TCP IP/2 - Transport":"orange","Dat 110/TCP IP/3 - Nettverk":"green","Dat 110/TCP IP/3 - Nettverk/Routing":"red","Dat 110/TCP IP/4 - Link":"blue","Dat 110/TCP IP/5 - Fysisk":"purple","Dat 110/Æfingar dæmi":"yellow","Dat 110/Æfingar dæmi/Eksempel dæmi":"cyan","Dat 110/Æfingar dæmi/Gömul eksamen":"orange","Myndir":"cyan","PDF":"red","PDF/Gömul eksamen":"orange","PDF/Gömul eksamen/Claude version":"purple","PDF/Yfirlit yfir spurningar":"green","Templates":"gray","Dat 110/Mikilvægt að muna.md":"yellow","Dat 110/Skoða betur.md":"pink","Dat 110/Arkitektúr/Arkitektúr.md":"purple","Dat 110/Arkitektúr/Distrubution transparency.md":"gray","Dat 110/Arkitektúr/Gjensidig utelukkelse.md":"blue","Dat 110/Arkitektúr/IOT.md":"orange","Dat 110/Arkitektúr/RPC.md":"pink","Dat 110/Arkitektúr/Skytjenester.md":"gray","Dat 110/Arkitektúr/Ustrukturert p2p overley-nettverk.md":"teal","Dat 110/Arkitektúr/ChordDHT/ChordDHT.md":"red","Dat 110/Arkitektúr/ChordDHT/DHT.md":"orange","Dat 110/Arkitektúr/ChordDHT/Fingertabell.md":"blue","Dat 110/Arkitektúr/ChordDHT/Succ()-fallið.md":"green","Dat 110/Arkitektúr/Pålitelighet/Bizantiske enigheten.md":"yellow","Dat 110/Arkitektúr/Pålitelighet/Feiltyper.md":"blue","Dat 110/Arkitektúr/Pålitelighet/Pålitelighet.md":"blue","Dat 110/Arkitektúr/Replikering/Replikering.md":"orange","Dat 110/Arkitektúr/Replikering/Konsistensmodeller.md":"purple","Dat 110/Arkitektúr/Replikering/Primær vs Replikert protokoller.md":"green","Dat 110/Arkitektúr/P-S MOM/Broker.md":"purple","Dat 110/Arkitektúr/P-S MOM/Layer 1 - Applikasjon.md":"red","Dat 110/Arkitektúr/P-S MOM/Layer 2 - Publish-Subscribe MOM.md":"orange","Dat 110/Arkitektúr/P-S MOM/Layer 3 - Socket  prog & RPC.md":"green","Dat 110/Arkitektúr/P-S MOM/P-S MOM.md":"cyan","Dat 110/Hugtök/FIFO rekkefølge.md":"orange","Dat 110/Hugtök/Multi threading í server.md":"green","Dat 110/Hugtök/Threads.md":"purple","Dat 110/Hugtök/Vektorklokke.md":"red","Dat 110/Prosjektene/Prosjekt 1.md":"blue","Dat 110/Prosjektene/Prosjekt 2.md":"green","Dat 110/Prosjektene/Prosjekt 3.md":"orange","Dat 110/Sikkerhet/Digital Signature/Digital Signature.md":"blue","Dat 110/Sikkerhet/Digital Signature/Offentlig nøkkel.md":"orange","Dat 110/Sikkerhet/Digital Signature/Privat Nøkkel.md":"purple","Dat 110/TCP IP/1 - Applikasjon/1 - Applikasjon.md":"red","Dat 110/TCP IP/1 - Applikasjon/DNS.md":"blue","Dat 110/TCP IP/1 - Applikasjon/FTP.md":"green","Dat 110/TCP IP/1 - Applikasjon/HTTP.md":"cyan","Dat 110/TCP IP/1 - Applikasjon/Host.md":"orange","Dat 110/TCP IP/1 - Applikasjon/SMTP.md":"gray","Dat 110/TCP IP/2 - Transport/2 - Transport.md":"orange","Dat 110/TCP IP/2 - Transport/Port nummer.md":"yellow","Dat 110/TCP IP/2 - Transport/TCP.md":"teal","Dat 110/TCP IP/2 - Transport/UDP.md":"gold","Dat 110/TCP IP/3 - Nettverk/3 - Nettverk.md":"green","Dat 110/TCP IP/3 - Nettverk/CIDR Blokk.md":"orange","Dat 110/TCP IP/3 - Nettverk/DHCP.md":"yellow","Dat 110/TCP IP/3 - Nettverk/Forwarding.md":"blue","Dat 110/TCP IP/3 - Nettverk/IP adresse.md":"purple","Dat 110/TCP IP/3 - Nettverk/Rutere.md":"cyan","Dat 110/TCP IP/3 - Nettverk/Routing/Routing.md":"red","Dat 110/TCP IP/3 - Nettverk/Routing/Bellman - Ford.md":"orange","Dat 110/TCP IP/3 - Nettverk/Routing/Djikstas Algoritme.md":"purple","Dat 110/TCP IP/4 - Link/4 - Link.md":"blue","Dat 110/TCP IP/4 - Link/ARP.md":"orange","Dat 110/TCP IP/4 - Link/CSMA.md":"yellow","Dat 110/TCP IP/4 - Link/Ethernet Switch.md":"green","Dat 110/TCP IP/4 - Link/Ethernet frame.md":"purple","Dat 110/TCP IP/4 - Link/MAC adresse.md":"pink","Dat 110/TCP IP/5 - Fysisk/5 - Fysisk.md":"purple","Dat 110/TCP IP/5 - Fysisk/Brodcast link.md":"cyan","Dat 110/Æfingar dæmi/Eksempel dæmi/Ekse -  Transmission.md":"blue","Dat 110/Æfingar dæmi/Eksempel dæmi/Ekse - Broker.md":"purple","Dat 110/Æfingar dæmi/Eksempel dæmi/Ekse - Succ (...).md":"green","Dat 110/Æfingar dæmi/Gömul eksamen/h24.md":"red","Dat 110/Æfingar dæmi/Gömul eksamen/v22.md":"yellow","Dat 110/Æfingar dæmi/Gömul eksamen/v23.md":"purple","Dat 110/Æfingar dæmi/Gömul eksamen/v24.md":"blue","Dat 110/Æfingar dæmi/Gömul eksamen/v25 - Opp  5.md":"green","Templates/Eks-template.md":"gray","PDF/DAT110_Oppgave9_eksamensoversikt.pdf":"blue","PDF/DAT110_gjennomgang.pdf":"red","PDF/Gömul eksamen/22-vår-norsk.pdf":"purple","PDF/Gömul eksamen/v23 - Norsku.md":"purple","PDF/Gömul eksamen/22-vår.pdf":"blue","PDF/Gömul eksamen/22-vår-sensorveiledning.pdf":"green","PDF/Gömul eksamen/23-vår.pdf":"blue","PDF/Gömul eksamen/23-vår_sensorveiledning.pdf":"green","PDF/Gömul eksamen/24-vår.pdf":"blue","PDF/Gömul eksamen/24-vår_sensorveiledning.pdf":"green","PDF/Gömul eksamen/24-høst.pdf":"orange","PDF/Gömul eksamen/24-høst_SensorVeiledning.pdf":"green","PDF/Gömul eksamen/25-høst.pdf":"orange","PDF/Gömul eksamen/25-høst_sensorveiledning.pdf":"green","PDF/Gömul eksamen/Claude version/24v_yfirferd.pdf":"purple","PDF/Yfirlit yfir spurningar/Eksamen_yfirlit.pdf":"blue","PDF/Yfirlit yfir spurningar/Opp_2_Yfirlit.pdf":"cyan","PDF/Yfirlit yfir spurningar/Opp_4_Yfirlit.pdf":"cyan","PDF/Yfirlit yfir spurningar/Opp_5_Yfirlit.pdf":"cyan","PDF/Yfirlit yfir spurningar/Opp_6_Yfirlit.pdf":"cyan","PDF/Yfirlit yfir spurningar/Opp_7_Yfirlit.pdf":"cyan","PDF/Yfirlit yfir spurningar/Opp_10_Yfirlit.pdf":"cyan","Dat 110/TCP IP/1 - Nettverk (Link)":"blue","Dat 110/TCP IP/2 - Internet":"green","Dat 110/TCP IP/2 - Internet/Routing":"red","Dat 110/TCP IP/3 - Transport":"orange","Dat 110/TCP IP/4 - Applikasjon":"red","Dat 110/TCP IP/Extra layer (Fysisk)":"purple","Forlesning":"blue","Forlesning/Del 1":"cyan","Info":"green","Lab":"#FF75C3","PDF/Extra stuff":"purple","PDF/Extra stuff/Yfirlit yfir spurningar":"green","PDF/Prosjekter":"red","Dat 110/Hugtök/Hugtök.md":"cyan","Dat 110/Sikkerhet/Sikkerhet.md":"green","Dat 110/TCP IP/1 - Nettverk (Link)/1 - Nettverk (Link).md":"blue","Dat 110/TCP IP/1 - Nettverk (Link)/ARP.md":"orange","Dat 110/TCP IP/1 - Nettverk (Link)/CSMA.md":"yellow","Dat 110/TCP IP/1 - Nettverk (Link)/Ethernet Switch.md":"green","Dat 110/TCP IP/1 - Nettverk (Link)/Ethernet frame.md":"purple","Dat 110/TCP IP/1 - Nettverk (Link)/MAC adresse.md":"pink","Dat 110/TCP IP/2 - Internet/2 - Internet.md":"green","Dat 110/TCP IP/2 - Internet/CIDR Blokk.md":"orange","Dat 110/TCP IP/2 - Internet/Forwarding.md":"blue","Dat 110/TCP IP/2 - Internet/IP adresse.md":"purple","Dat 110/TCP IP/2 - Internet/Routing/Bellman - Ford.md":"orange","Dat 110/TCP IP/2 - Internet/Routing/Djikstas Algoritme.md":"purple","Dat 110/TCP IP/2 - Internet/Routing/Routing.md":"red","Dat 110/TCP IP/2 - Internet/Rutere.md":"cyan","Dat 110/TCP IP/3 - Transport/3 - Transport.md":"orange","Dat 110/TCP IP/3 - Transport/Port nummer.md":"yellow","Dat 110/TCP IP/3 - Transport/TCP.md":"teal","Dat 110/TCP IP/3 - Transport/UDP.md":"gold","Dat 110/TCP IP/4 - Applikasjon/4 - Applikasjon.md":"red","Dat 110/TCP IP/4 - Applikasjon/DHCP.md":"yellow","Dat 110/TCP IP/4 - Applikasjon/DNS.md":"blue","Dat 110/TCP IP/4 - Applikasjon/FTP.md":"green","Dat 110/TCP IP/4 - Applikasjon/HTTP.md":"cyan","Dat 110/TCP IP/4 - Applikasjon/SMTP.md":"gray","Dat 110/TCP IP/Extra layer (Fysisk)/Brodcast link.md":"cyan","Dat 110/TCP IP/Extra layer (Fysisk)/Extra layer (Fysisk).md":"purple","Dat 110/Æfingar dæmi/Eksempel dæmi/v25 - Opp  5.md":"green","Dat 110/Æfingar dæmi/Gömul eksamen/v25.md":"cyan","Myndir/ClouDNS-TCPIP-5-7.png":"blue","Myndir/Eclipse_PDF_0dQw1cRxQT_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Eclipse_PDF_IXIhcOSc0m_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Eclipse_PDF_yFpaObqInL_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Eclipse_PDF_yfWFSWot3F_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Eclipse_PDF_yjtmKBB8DX_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Gemini_Generated_Image_49htk749htk749ht_upscayl_5x_digital-art-4x.png":"cyan","Myndir/Gemini_Generated_Image_7f7u3z7f7u3z7f7u_upscayl_3x_digital-art-4x.png":"cyan","Myndir/Gemini_Generated_Image_girweogirweogirw_upscayl_5x_digital-art-4x.png":"cyan","Myndir/Myndir.md":"cyan","Myndir/Obsidian_1VBmvD5Oup_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Obsidian_C2FK5LhcIm_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Obsidian_QaHKzbKIo9_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Obsidian_U8vgT2oVNq_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Obsidian_hyKITYBnz9_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Obsidian_vIIpWNYR5n_upscayl_4x_digital-art-4x.png":"cyan","Myndir/One_Photo_Viewer_5kbYt1IdyT_upscayl_5x_digital-art-4x.png":"cyan","Myndir/One_Photo_Viewer_vudjHsUgB5_upscayl_5x_digital-art-4x.png":"cyan","Myndir/PS-MOM_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Pasted image 20260524104628.png":"cyan","Myndir/Pasted image 20260524113321.png":"cyan","Myndir/Pasted image 20260524114412.png":"cyan","Myndir/Pasted image 20260524125300.png":"cyan","Myndir/Pasted image 20260524125635.png":"cyan","Myndir/Pasted image 20260524130601.png":"cyan","Myndir/Pasted image 20260524130910.png":"cyan","Myndir/Pasted image 20260525115551.png":"cyan","Myndir/Pasted image 20260525115811_upscayl_4x_digital-art-4x.png":"cyan","Myndir/Pasted image 20260525142400.png":"cyan","Myndir/Pasted image 20260526090626.png":"cyan","Myndir/Pasted image 20260526104745.png":"cyan","Myndir/Pasted image 20260526104806.png":"cyan","Myndir/Pasted image 20260526112535.png":"cyan","Myndir/Pasted image 20260529073141.png":"cyan","Myndir/Pasted image 20260529150332.png":"cyan","Myndir/claude_5ItYtuG4W4_upscayl_4x_digital-art-4x.png":"cyan","Myndir/claude_KD6S6LgGiE_upscayl_4x_digital-art-4x.png":"cyan","Myndir/inverted.gif":"cyan","Myndir/udp_upscayl_4x_digital-art-4x.png":"cyan","PDF/Extra stuff/DAT110_Oppgave9_eksamensoversikt.pdf":"blue","PDF/Extra stuff/DAT110_gjennomgang.pdf":"red","PDF/Extra stuff/Yfirlit yfir spurningar/Eksamen_yfirlit.pdf":"blue","PDF/Extra stuff/Yfirlit yfir spurningar/Opp_10_Yfirlit.pdf":"cyan","PDF/Extra stuff/Yfirlit yfir spurningar/Opp_2_Yfirlit.pdf":"cyan","PDF/Extra stuff/Yfirlit yfir spurningar/Opp_4_Yfirlit.pdf":"cyan","PDF/Extra stuff/Yfirlit yfir spurningar/Opp_5_Yfirlit.pdf":"cyan","PDF/Extra stuff/Yfirlit yfir spurningar/Opp_6_Yfirlit.pdf":"cyan","PDF/Extra stuff/Yfirlit yfir spurningar/Opp_7_Yfirlit.pdf":"cyan","PDF/Extra stuff/Yfirlit yfir spurningar/Yfirlit yfir spurningar.md":"green","PDF/Gömul eksamen/Claude version/Claude version.md":"purple","PDF/Gömul eksamen/Gömul eksamen.md":"orange","PDF/PDF.md":"red","PDF/Prosjekter/Prosjekt 1.md":"blue","Templates/Templates.md":"gray","web.config":"gray","Eksamen":"#FFD44A","Forelesninger":"#4DA6FF","Hugök":"#FFD44A","Innlevering":"#FF657A","Semester Projects":"#2ED8A3","fonts":"#B9C5D6","ros2_students_25":"#4DA6FF"},"prefixes":{"Myndir/":"cyan"},"links":{"Mikilvægt að muna":"yellow","Skoða betur":"pink","Arkitektúr":"purple","Bizantiske enigheten":"yellow","Gjensidig utelukkelse":"blue","IOT":"orange","RPC":"pink","Skytjenester":"gray","Ustrukturert p2p overley-nettverk":"teal","ChordDHT":"red","DHT":"orange","Fingertabell":"blue","Succ()-fallið":"green","Pålitelighet":"blue","Konsistensmodeller":"purple","Primær vs Replikert protokoller":"green","Broker":"purple","Layer 1 - Applikasjon":"red","Layer 2 - Publish-Subscribe MOM":"orange","Layer 3 - Socket  prog & RPC":"green","P-S MOM":"cyan","Distrubution transparency":"gray","Feiltyper":"blue","FIFO rekkefølge":"orange","Multi threading í server":"green","Replikering":"orange","Threads":"purple","Vektorklokke":"red","Prosjekt 1":"blue","Prosjekt 2":"green","Prosjekt 3":"orange","Digital Signature":"blue","Offentlig nøkkel":"orange","Privat Nøkkel":"purple","1 - Applikasjon":"red","DNS":"blue","FTP":"green","HTTP":"cyan","Host":"orange","SMTP":"gray","2 - Transport":"orange","Port nummer":"yellow","TCP":"teal","UDP":"gold","3 - Nettverk":"green","CIDR Blokk":"orange","DHCP":"yellow","Forwarding":"blue","IP adresse":"purple","Rutere":"cyan","Routing":"red","Bellman - Ford":"orange","Djikstas Algoritme":"purple","4 - Link":"blue","ARP":"orange","CSMA":"yellow","Ethernet Switch":"green","Ethernet frame":"purple","MAC adresse":"pink","5 - Fysisk":"purple","Brodcast link":"cyan","Ekse -  Transmission":"blue","Ekse - Broker":"purple","Ekse - Succ (...)":"green","h24":"red","v22":"yellow","v23":"purple","v24":"blue","v25 - Opp  5":"green","v23 - Norsku":"purple","Eks-template":"gray","Hugtök":"cyan","Sikkerhet":"green","1 - Nettverk (Link)":"blue","2 - Internet":"green","3 - Transport":"orange","4 - Applikasjon":"red","Extra layer (Fysisk)":"purple","v25":"cyan","Myndir":"cyan","Yfirlit yfir spurningar":"green","Claude version":"purple","Gömul eksamen":"orange","PDF":"red","Templates":"gray"}};
@@ -10,7 +13,7 @@ const DEFAULTS = Object.freeze({
   modalOpacityDark: 65, modalOpacityLight: 85,
   sfPro: true, quotes: true, quoteColor: '#ffffff', quoteBar: '#ffffff',
   math: true, mathScale: 128,
-  academicNotes: false, fullWidthNotes: false,
+  academicNotes: false, examNotes: false, examNotesPath: 'Eksamen', fullWidthNotes: false,
   folderTypography: true, folderSize1: 1.30, folderSize2: 1.04,
   folderSize3: 0.958, folderSize4: 0.921,
   folderWeight1: 700, folderWeight2: 800, folderWeight3: 700, folderWeight4: 700,
@@ -30,6 +33,8 @@ const RANGES = {
   folderMix: [0, 100], fileMix: [0, 100], linkMix: [0, 100],
   pdfInvert: [0, 1], pdfContrast: [0.5, 1.5], imageInvert: [0, 1], imageContrast: [0.5, 1.5]
 };
+const DEVICE_DIMMING_STORAGE_KEY = 'cupertino-toolkit-device-dimming';
+const DIMMING_PERCENTAGES = new Set(['darkerAmountDark', 'darkerAmountLight']);
 const PALETTE = {
   red: ['--color-red', '#e93147'], orange: ['--color-orange', '#ec7500'],
   yellow: ['--color-yellow', '#e0ac00'], green: ['--color-green', '#08b94e'],
@@ -45,6 +50,17 @@ const OWN_CLASSES = ['ctk-active', 'ctk-sidebar', 'ctk-darker', 'ctk-darker-dark
   'ctk-academic-notes', 'ctk-full-width-notes'];
 const MEDIA_CLASSES = ['ctk-light', 'ctk-dark', 'ctk-plate', 'ctk-pdf-light', 'ctk-pdf-force-dark', 'ctk-pdf-thumb'];
 const COLOR_PROPS = ['--ctk-label-color', '--ctk-link-color'];
+const HEADING_CLASSES = ['ctk-heading-colored', 'ctk-heading-icon'];
+const HEADING_PROPS = ['--ctk-heading-color', '--ctk-heading-icon'];
+const HEADING_TITLE = 'title';
+const HEADING_LEVELS = [1, 2, 3, 4, 5, 6];
+const HEADING_SIZE_MIN = 8;
+const HEADING_SIZE_MAX = 120;
+const NOTE_TITLE_SELECTOR = ':scope > .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .mod-header > .inline-title:not([data-level]), :scope > .markdown-source-view.mod-cm6 > .cm-editor > .cm-scroller > .cm-sizer > .inline-title:not([data-level])';
+const readingHeading = level => `.markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .el-h${level} > h${level}`;
+const READING_HEADING_SELECTOR = HEADING_LEVELS.map(level => ':scope > ' + readingHeading(level)).join(', ');
+const HEADING_TARGETS = '.inline-title, h1, h2, h3, h4, h5, h6';
+const headingStyleChanged = StateEffect.define();
 const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 const plain = value => value && typeof value === 'object' && !Array.isArray(value);
 const safeKey = key => typeof key === 'string' && key.length > 0 && key.length < 10000 && !['__proto__', 'constructor', 'prototype'].includes(key);
@@ -56,6 +72,92 @@ const cleanMap = (input, accept) => {
   if (plain(input)) for (const [key, value] of Object.entries(input)) if (safeKey(key) && accept(value)) result[key] = value;
   return result;
 };
+const headingHex = value => typeof value === 'string' && /^#[\da-f]{6}$/i.test(value);
+const validHeadingSize = value => Number.isFinite(value) && value >= HEADING_SIZE_MIN && value <= HEADING_SIZE_MAX;
+const parseHeadingSize = value => /^\d+(?:[.,]\d+)?$/.test(value) ? Number(value.replace(',', '.')) : NaN;
+function headingColorInput(value) {
+  const trimmed = value.trim();
+  return trimmed && !trimmed.startsWith('#') ? '#' + trimmed : trimmed;
+}
+
+function cleanHeadingDefaults(input) {
+  const defaults = Object.create(null);
+  if (!plain(input)) return defaults;
+  for (const level of HEADING_LEVELS) {
+    const style = input[level];
+    if (!plain(style)) continue;
+    const size = validHeadingSize(style.size) ? style.size : null;
+    const color = headingHex(style.color) ? style.color.toLowerCase() : '';
+    const weight = [400, 700].includes(style.weight) ? style.weight : null;
+    const underline = style.underline === true;
+    const strike = style.strike === true;
+    if (size || color || weight || underline || strike) defaults[level] = { size, color, weight, underline, strike };
+  }
+  return defaults;
+}
+
+function headingDefaultsCss(defaults = {}) {
+  const rules = [];
+  const scope = 'body.ctk-active .workspace-leaf-content[data-type="markdown"] > .view-content > ';
+  const text = ':is(span, a, strong, b, em, i, mark, font):not(.collapse-indicator, .collapse-indicator *, .cm-fold-indicator, .iconic-icon, .iconic-icon *, .iconic-sidekick, .iconic-sidekick *)';
+  for (const level of HEADING_LEVELS) {
+    const style = defaults[level];
+    if (!style) continue;
+    const selectors = [
+      scope + readingHeading(level),
+      scope + `.markdown-source-view.mod-cm6.is-live-preview > .cm-editor > .cm-scroller > .cm-sizer > .cm-contentContainer > .cm-content > .HyperMD-header-${level}`
+    ];
+    const declarations = [];
+    if (style.size) declarations.push(`font-size:${style.size}px !important`);
+    if (style.weight) declarations.push(`--font-weight:${style.weight}`, 'font-weight:var(--font-weight) !important');
+    const lines = [style.underline && 'underline', style.strike && 'line-through'].filter(Boolean).join(' ');
+    if (lines) declarations.push(`text-decoration-line:${lines}`);
+    if (style.color) {
+      const color = `var(--ctk-heading-color, ${style.color})`;
+      const foreground = `color:var(--ftc-color, ${color}) !important`;
+      declarations.push(`--ctk-heading-default-color:${style.color}`, `--ctk-academic-accent:${color}`, foreground);
+      rules.push(`${selectors.map(selector => selector + ' ' + text).join(',\n')} {${foreground};}`);
+    }
+    rules.push(`${selectors.join(',\n')} {${declarations.join(';')};}`);
+  }
+  return rules.length ? '\n@media screen {\n' + rules.join('\n') + '\n}' : '';
+}
+
+function cleanHeadingStyle(input) {
+  if (!plain(input)) return null;
+  const color = headingHex(input.color) ? input.color.toLowerCase() : '';
+  const icon = typeof input.icon === 'string' && /^[\w-]{1,120}$/.test(input.icon) ? input.icon : '';
+  return color || icon ? { color, icon } : null;
+}
+
+function cleanHeadingStyles(input) {
+  const files = Object.create(null);
+  for (const [path, entries] of Object.entries(plain(input) ? input : {})) {
+    if (!safeKey(path) || !plain(entries)) continue;
+    const styles = Object.create(null);
+    for (const [key, value] of Object.entries(entries)) {
+      const style = safeKey(key) ? cleanHeadingStyle(value) : null;
+      if (style) styles[key] = style;
+    }
+    if (Object.keys(styles).length) files[path] = styles;
+  }
+  return files;
+}
+
+function headingText(text) {
+  return text.replace(/~=\{[^\s}]+\}|=~/g, '').replace(/\s+/g, ' ').trim().normalize('NFC');
+}
+
+function headingOnLine(doc, entry) {
+  if (entry.line >= doc.lines) return false;
+  const line = doc.line(entry.line + 1).text;
+  const atx = /^ {0,3}(#{1,6})[\t ]+(.+)$/.exec(line);
+  if (atx) return atx[1].length === entry.level && headingText(atx[2].replace(/[\t ]+#+[\t ]*$/, '')) === entry.text;
+  if (entry.level > 2 || headingText(line) !== entry.text || entry.endLine <= entry.line || entry.endLine >= doc.lines) return false;
+  const underline = doc.line(entry.endLine + 1).text;
+  return (entry.level === 1 ? /^ {0,3}=+\s*$/ : /^ {0,3}-+\s*$/).test(underline);
+}
+
 function normalizeData(input) {
   const raw = plain(input) ? input : {};
   const sourceSettings = plain(raw.settings) ? { ...raw.settings } : {};
@@ -67,15 +169,19 @@ function normalizeData(input) {
   const settings = { ...DEFAULTS };
   for (const [key, fallback] of Object.entries(DEFAULTS)) {
     const value = sourceSettings[key];
-    if (typeof fallback === 'boolean' && typeof value === 'boolean') settings[key] = value;
+    if (key === 'examNotesPath') {
+      if (typeof value === 'string') settings[key] = value.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+    } else if (typeof fallback === 'boolean' && typeof value === 'boolean') settings[key] = value;
     else if (typeof fallback === 'number' && typeof value === 'number' && Number.isFinite(value)) {
       const [min, max] = RANGES[key];
       settings[key] = Math.max(min, Math.min(max, value));
     } else if (typeof fallback === 'string' && /^#[\da-f]{6}$/i.test(value || '')) settings[key] = value;
   }
+  settings.headingDefaults = cleanHeadingDefaults(sourceSettings.headingDefaults);
   return { version: 2, settings, colors: cleanMap(raw.colors, validColor),
     images: cleanMap(raw.images, v => ['light', 'dark', 'plate'].includes(v)),
     pdfs: cleanMap(raw.pdfs, v => ['light', 'dark'].includes(v)),
+    headingStyles: cleanHeadingStyles(raw.headingStyles),
     migrated: raw.migrated === true };
 }
 
@@ -85,16 +191,25 @@ module.exports = class CupertinoToolkit extends Plugin {
     this.documents = new Map();
     this.folderFocus = new Map();
     this.colorCache = new Map();
+    this.headingIndexes = new WeakMap();
+    this.headingIcons = new Map();
     this.dirtyColors = true;
     this.timer = null;
     this.saveQueue = Promise.resolve();
     const saved = await this.loadData();
     this.data = normalizeData(saved);
+    this.deviceDimming = this.loadDeviceDimming();
     if (!saved) {
       await this.importPreviousSettings();
       await this.persist();
     } else if (saved.version !== 2) await this.persist();
     this.addSettingTab(new ToolkitSettings(this.app, this));
+    this.headingExtension = this.createHeadingExtension();
+    this.registerEditorExtension(this.headingExtension);
+    this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, view) => {
+      const target = this.editorHeading(editor, view);
+      if (target) this.addHeadingMenuItem(menu, target);
+    }));
     for (const name of ['layout-change', 'active-leaf-change', 'file-open']) {
       this.registerEvent(this.app.workspace.on(name, () => { this.attach(); this.schedule(); }));
     }
@@ -111,12 +226,22 @@ module.exports = class CupertinoToolkit extends Plugin {
     this.registerEvent(this.app.vault.on('rename', (file, oldPath) => this.renameEntries(file.path, oldPath)));
     this.registerEvent(this.app.vault.on('delete', file => this.deleteEntries(file.path)));
     this.registerEvent(this.app.metadataCache.on('resolved', () => this.schedule(true)));
+    this.registerEvent(this.app.metadataCache.on('changed', file => {
+      if (this.data.headingStyles[file.path]) this.schedule();
+    }));
     this.registerMarkdownPostProcessor((el, ctx) => {
       if (this.stopped) return;
       this.applyImages(el, ctx.sourcePath);
       this.applyLinks(el, ctx.sourcePath);
     });
     this.addCommand({ id: 'refresh', name: 'Refresh appearance and colors', callback: () => this.schedule(true) });
+    this.addCommand({ id: 'edit-heading-style', name: 'Edit heading color and icon',
+      editorCheckCallback: (checking, editor, view) => {
+        const target = this.editorHeading(editor, view);
+        if (!target) return false;
+        if (!checking) this.openHeadingStyle(target);
+        return true;
+      } });
     this.addCommand({ id: 'toggle-pdf', name: 'Toggle PDF dark mode', callback: () => this.update('pdfDark', !this.data.settings.pdfDark) });
     this.addCommand({ id: 'cycle-media', name: 'Cycle appearance of the current image or PDF', checkCallback: checking => {
       const target = this.currentMedia();
@@ -149,14 +274,62 @@ module.exports = class CupertinoToolkit extends Plugin {
   }
 
   async update(key, value) {
+    if (this.deviceDimming?.enabled && DIMMING_PERCENTAGES.has(key)) {
+      if (!Number.isFinite(value)) return false;
+      return this.saveDeviceDimming({ ...this.deviceDimming, [key]: Math.max(0, Math.min(100, value)) });
+    }
     return this.updateSettings({ [key]: value });
+  }
+
+  loadDeviceDimming() {
+    try {
+      const saved = this.app.loadLocalStorage?.(DEVICE_DIMMING_STORAGE_KEY);
+      if (!plain(saved)) return null;
+      const profile = { enabled: saved.enabled === true };
+      for (const key of DIMMING_PERCENTAGES) {
+        const value = saved[key];
+        profile[key] = Number.isFinite(value) && value >= 0 && value <= 100 ? value : this.data.settings[key];
+      }
+      return profile;
+    } catch (error) {
+      console.warn('Toolkit: could not read device dimming', error);
+      return null;
+    }
+  }
+
+  setDeviceDimming(enabled) {
+    const profile = this.deviceDimming || {
+      darkerAmountDark: this.data.settings.darkerAmountDark,
+      darkerAmountLight: this.data.settings.darkerAmountLight
+    };
+    return this.saveDeviceDimming({ ...profile, enabled });
+  }
+
+  saveDeviceDimming(profile) {
+    try {
+      this.app.saveLocalStorage(DEVICE_DIMMING_STORAGE_KEY, profile);
+    } catch (error) {
+      console.error('Toolkit: could not save device dimming', error);
+      new Notice('Toolkit could not save dimming for this device.');
+      return false;
+    }
+    this.deviceDimming = profile;
+    this.schedule();
+    return true;
+  }
+
+  settingValue(key) {
+    return this.deviceDimming?.enabled && DIMMING_PERCENTAGES.has(key)
+      ? this.deviceDimming[key]
+      : this.data.settings[key];
   }
 
   async updateSettings(changes) {
     const next = normalizeData({ ...this.data, settings: { ...this.data.settings, ...changes } });
     this.data = next;
     this.schedule(true);
-    try { await this.persist(); } catch (error) { this.saveError(error); }
+    try { await this.persist(); return true; }
+    catch (error) { this.saveError(error); return false; }
   }
 
   saveError(error) {
@@ -207,7 +380,9 @@ module.exports = class CupertinoToolkit extends Plugin {
     const style = doc.createElement('style');
     style.dataset.cupertinoToolkit = 'settings';
     doc.head.appendChild(style);
-    const onContextMenu = event => this.imageMenu(event);
+    const onContextMenu = event => {
+      if (!this.headingMenu(event)) this.imageMenu(event);
+    };
     doc.addEventListener('contextmenu', onContextMenu, true);
     const observer = new doc.defaultView.MutationObserver(records => {
       let dirty = false, changed = false;
@@ -280,6 +455,12 @@ module.exports = class CupertinoToolkit extends Plugin {
         this.applyFolderFocus(view);
       }
       const source = view.file?.path || '';
+      if (type === 'markdown') {
+        const { examNotes, examNotesPath } = this.data.settings;
+        const matches = examNotesPath && (source === examNotesPath || source.startsWith(examNotesPath + '/'));
+        root.classList.toggle('ctk-exam-note', examNotes && !!matches);
+        if (source) this.applyHeadingStyles(view, source);
+      }
       if (type === 'pdf') this.stampMedia(root, this.data.pdfs[source], true);
       this.applyImages(root, source);
       this.applyLinks(root, source);
@@ -347,7 +528,7 @@ module.exports = class CupertinoToolkit extends Plugin {
       'ctk-nn-md': false, 'ctk-nn-all': false, 'ctk-webview': s.webview,
       'ctk-svg-plate': false, 'ctk-overrides': s.mediaOverrides };
     for (const [key, value] of Object.entries(toggles)) if (doc.body.classList.contains(key) !== value) doc.body.classList.toggle(key, value);
-    const vars = { 'sidebar-inset': s.sidebarInset + 'px', 'darker-amount': s.darkerAmountDark + '%',
+    const vars = { 'sidebar-inset': s.sidebarInset + 'px', 'darker-amount': this.settingValue('darkerAmountDark') + '%',
       'modal-opacity': s.modalOpacityDark + '%',
       'quote-color': s.quoteColor, 'quote-bar': s.quoteBar, 'math-scale': s.mathScale + '%',
       'pdf-invert': s.pdfInvert, 'pdf-contrast': s.pdfContrast, 'image-invert': s.imageInvert,
@@ -357,8 +538,196 @@ module.exports = class CupertinoToolkit extends Plugin {
       vars[`folder-weight-${level}`] = s[`folderWeight${level}`];
     }
     const css = 'body.ctk-active {' + Object.entries(vars).map(([k, v]) => `--ctk-${k}:${v};`).join('') + '}\n' +
-      `body.ctk-active.theme-light {--ctk-plate-bg:${s.plateLight};--ctk-darker-amount:${s.darkerAmountLight}%;--ctk-modal-opacity:${s.modalOpacityLight}%;}`;
+      `body.ctk-active.theme-light {--ctk-plate-bg:${s.plateLight};--ctk-darker-amount:${this.settingValue('darkerAmountLight')}%;--ctk-modal-opacity:${s.modalOpacityLight}%;}` +
+      headingDefaultsCss(s.headingDefaults);
     if (style.textContent !== css) style.textContent = css;
+  }
+
+  headingIndex(path) {
+    const headings = path && this.app.metadataCache.getCache(path)?.headings;
+    if (!headings) return null;
+    if (this.headingIndexes.has(headings)) return this.headingIndexes.get(headings);
+    const index = new Map();
+    const counts = new Map();
+    for (const heading of headings) {
+      if (!HEADING_LEVELS.includes(heading.level)) continue;
+      const text = headingText(heading.heading);
+      if (!text) continue;
+      const identity = JSON.stringify([heading.level, text]);
+      const occurrence = counts.get(identity) || 0;
+      counts.set(identity, occurrence + 1);
+      const line = heading.position.start.line;
+      index.set(line, { key: identity + ':' + occurrence, text, level: heading.level, line,
+        endLine: heading.position.end.line });
+    }
+    this.headingIndexes.set(headings, index);
+    return index;
+  }
+
+  editorHeading(editor, view) {
+    const path = view?.file?.path;
+    const doc = editor?.cm?.state?.doc;
+    if (!path || !doc) return null;
+    const line = editor.getCursor('from').line;
+    const entry = this.headingIndex(path)?.get(line);
+    if (!entry || editor.getCursor('to').line !== line || !headingOnLine(doc, entry)) return null;
+    return { path, key: entry.key, label: entry.text };
+  }
+
+  headingPresentation(style) {
+    const values = [style?.color || '', ''];
+    if (style?.icon) {
+      let mask = this.headingIcons.get(style.icon);
+      if (!mask) {
+        const icon = getIcon(style.icon);
+        if (icon) {
+          icon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+          mask = `url("data:image/svg+xml,${encodeURIComponent(icon.outerHTML)}")`;
+          this.headingIcons.set(style.icon, mask);
+        }
+      }
+      values[1] = mask || '';
+    }
+    return values;
+  }
+
+  createHeadingExtension() {
+    const plugin = this;
+    return ViewPlugin.fromClass(class {
+      constructor(cm) { this.build(cm); }
+
+      context(cm) {
+        const live = cm.state.field(editorLivePreviewField, false);
+        const path = live && cm.state.field(editorInfoField, false)?.file?.path;
+        const styles = path && plugin.data.headingStyles[path];
+        return { styles, index: styles ? plugin.headingIndex(path) : null };
+      }
+
+      needsRefresh(cm) {
+        const { styles, index } = this.context(cm);
+        return styles !== this.styles || index !== this.index;
+      }
+
+      update(update) {
+        if (update.docChanged || update.viewportChanged || this.needsRefresh(update.view) ||
+          update.transactions.some(tr => tr.effects.some(effect => effect.is(headingStyleChanged)))) {
+          this.build(update.view);
+        }
+      }
+
+      build(cm) {
+        const { styles, index } = this.context(cm);
+        this.styles = styles;
+        this.index = index;
+        this.decorations = Decoration.none;
+        if (!index) return;
+        const doc = cm.state.doc;
+        const first = doc.lineAt(cm.viewport.from).number - 1;
+        const last = doc.lineAt(cm.viewport.to).number - 1;
+        const ranges = [];
+        for (let line = first; line <= last; line++) {
+          const entry = index.get(line);
+          const style = entry && styles[entry.key];
+          if (!style || !headingOnLine(doc, entry)) continue;
+          const values = plugin.headingPresentation(style);
+          const classes = HEADING_CLASSES.filter((_, i) => values[i]);
+          if (!classes.length) continue;
+          const css = HEADING_PROPS.map((prop, i) => values[i] ? `${prop}:${values[i]};` : '').join('');
+          ranges.push(Decoration.line({ attributes: { class: classes.join(' '), style: css } }).range(doc.line(line + 1).from));
+        }
+        this.decorations = Decoration.set(ranges);
+      }
+    }, { decorations: instance => instance.decorations });
+  }
+
+  readingHeading(view, element, index) {
+    if (!index) return null;
+    // The preview renderer resolves the actual section even when earlier headings are folded or virtualized.
+    const section = view.previewMode?.renderer?.getSectionInfo?.(element);
+    const entry = section && index.get(section.lineStart);
+    return entry?.level === Number(element.tagName.slice(1)) ? entry : null;
+  }
+
+  applyHeadingPresentation(element, style) {
+    if (!element) return;
+    const values = this.headingPresentation(style);
+    for (let i = 0; i < HEADING_PROPS.length; i++) {
+      element.classList.toggle(HEADING_CLASSES[i], !!values[i]);
+      const property = HEADING_PROPS[i];
+      if (element.style.getPropertyValue(property) === values[i]) continue;
+      if (values[i]) element.style.setProperty(property, values[i]);
+      else element.style.removeProperty(property);
+    }
+  }
+
+  applyHeadingStyles(view, path) {
+    const cm = view.editor?.cm;
+    if (cm?.plugin(this.headingExtension)?.needsRefresh(cm)) cm.dispatch({ effects: headingStyleChanged.of(null) });
+    const root = view.contentEl;
+    if (!root) return;
+    const styles = this.data.headingStyles[path];
+    if (!styles && !root.querySelector('.ctk-heading-colored, .ctk-heading-icon')) return;
+    this.applyHeadingPresentation(root.querySelector(NOTE_TITLE_SELECTOR), styles?.[HEADING_TITLE]);
+    const index = styles ? this.headingIndex(path) : null;
+    for (const element of root.querySelectorAll(READING_HEADING_SELECTOR)) {
+      const entry = this.readingHeading(view, element, index);
+      this.applyHeadingPresentation(element, entry && styles[entry.key]);
+    }
+  }
+
+  headingMenu(event) {
+    if (event.defaultPrevented) return false;
+    const hit = event.target?.closest?.(HEADING_TARGETS);
+    if (!hit || event.target.closest('a, img, .collapse-indicator, .ftc-color-delimiter')) return false;
+    const container = hit.closest('.workspace-leaf-content[data-type="markdown"]');
+    if (!container) return false;
+    const view = this.app.workspace.getLeavesOfType('markdown').find(leaf => leaf.view.containerEl === container)?.view;
+    const root = view?.contentEl;
+    const path = view?.file?.path;
+    if (!root || !path) return false;
+    let target;
+    if (hit === root.querySelector(NOTE_TITLE_SELECTOR)) {
+      target = { path, key: HEADING_TITLE, label: view.file.basename };
+    } else if ([...root.querySelectorAll(READING_HEADING_SELECTOR)].includes(hit)) {
+      const entry = this.readingHeading(view, hit, this.headingIndex(path));
+      if (entry) target = { path, key: entry.key, label: entry.text };
+    }
+    if (!target) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    const menu = new Menu();
+    this.addHeadingMenuItem(menu, target);
+    menu.showAtMouseEvent(event);
+    return true;
+  }
+
+  addHeadingMenuItem(menu, target) {
+    menu.addItem(item => item.setTitle('Toolkit: Edit heading color and icon').setIcon('palette')
+      .onClick(() => this.openHeadingStyle(target)));
+  }
+
+  openHeadingStyle(target) {
+    new HeadingStyleModal(this.app, this, target).open();
+  }
+
+  async setHeadingStyle({ path, key }, input) {
+    const previous = this.data;
+    const styles = { ...previous.headingStyles[path] };
+    const style = cleanHeadingStyle(input);
+    if (style) styles[key] = style;
+    else delete styles[key];
+    const headingStyles = { ...previous.headingStyles };
+    if (Object.keys(styles).length) headingStyles[path] = styles;
+    else delete headingStyles[path];
+    const next = { ...previous, headingStyles };
+    this.data = next;
+    this.schedule();
+    try { await this.persist(); return true; }
+    catch (error) {
+      if (this.data === next) { this.data = previous; this.schedule(); }
+      this.saveError(error);
+      return false;
+    }
   }
 
   iconicColor(path, folder) {
@@ -613,7 +982,12 @@ module.exports = class CupertinoToolkit extends Plugin {
 
   renameEntries(newPath, oldPath) {
     let changed = false;
-    for (const store of ['colors', 'images', 'pdfs']) {
+    const { examNotesPath } = this.data.settings;
+    if (examNotesPath === oldPath || examNotesPath.startsWith(oldPath + '/')) {
+      this.data.settings.examNotesPath = newPath + examNotesPath.slice(oldPath.length);
+      changed = true;
+    }
+    for (const store of ['colors', 'images', 'pdfs', 'headingStyles']) {
       const map = this.data[store];
       for (const key of Object.keys(map)) if (key === oldPath || key.startsWith(oldPath + '/')) {
         map[newPath + key.slice(oldPath.length)] = map[key]; delete map[key]; changed = true;
@@ -632,7 +1006,7 @@ module.exports = class CupertinoToolkit extends Plugin {
 
   deleteEntries(path) {
     let changed = false;
-    for (const store of ['colors', 'images', 'pdfs']) for (const key of Object.keys(this.data[store])) {
+    for (const store of ['colors', 'images', 'pdfs', 'headingStyles']) for (const key of Object.keys(this.data[store])) {
       if (key === path || key.startsWith(path + '/')) { delete this.data[store][key]; changed = true; }
     }
     if (changed) this.persist().catch(error => this.saveError(error));
@@ -641,6 +1015,8 @@ module.exports = class CupertinoToolkit extends Plugin {
 
   cleanDocument(doc) {
     doc.body?.classList.remove(...OWN_CLASSES);
+    for (const el of doc.querySelectorAll('.ctk-exam-note')) el.classList.remove('ctk-exam-note');
+    for (const el of doc.querySelectorAll('.ctk-heading-colored, .ctk-heading-icon')) this.applyHeadingPresentation(el, null);
     for (const el of doc.querySelectorAll('.ctk-colored-label, .ctk-colored-link')) {
       el.classList.remove('ctk-colored-label', 'ctk-colored-link');
       for (const property of COLOR_PROPS) el.style.removeProperty(property);
@@ -673,7 +1049,7 @@ class ToolkitSettings extends PluginSettingTab {
       const setting = new Setting(el).setName(name).setDesc(desc || '');
       setting.addSlider(t => {
         range = t;
-        t.setLimits(min, max, step).setValue(p.data.settings[key]).setDynamicTooltip().onChange(v => {
+        t.setLimits(min, max, step).setValue(p.settingValue(key)).setDynamicTooltip().onChange(v => {
           input?.setValue(String(v));
           input?.inputEl.removeAttribute('aria-invalid');
           input?.inputEl.setCustomValidity('');
@@ -681,7 +1057,7 @@ class ToolkitSettings extends PluginSettingTab {
         });
       }).addText(t => {
         input = t;
-        t.setValue(String(p.data.settings[key]));
+        t.setValue(String(p.settingValue(key)));
         t.inputEl.classList.add('ctk-number-input');
         t.inputEl.setAttribute('inputmode', 'decimal');
         t.inputEl.setAttribute('aria-label', name);
@@ -702,17 +1078,33 @@ class ToolkitSettings extends PluginSettingTab {
     const color = (key, name) => new Setting(el).setName(name).addColorPicker(c => c.setValue(p.data.settings[key]).onChange(v => p.update(key, v)));
     heading('Markdown notes');
     toggle('academicNotes', 'Academic Notes', 'Larger titles and headings, with colored section bars in Reading view and Live Preview.');
+    toggle('examNotes', 'Exam Notes', 'Muted chapter colors and clearer foldable rows in Reading view and Live Preview. Takes priority over Academic Notes for matching notes.');
+    new Setting(el).setName('Exam Notes path')
+      .setDesc('Folder or Markdown file relative to the vault, such as Eksamen. A blank path applies the style nowhere.')
+      .addText(t => t.setPlaceholder('Eksamen').setValue(p.data.settings.examNotesPath)
+        .onChange(value => p.update('examNotesPath', value)));
     toggle('fullWidthNotes', 'Full-width notes', 'Use the available width of the Markdown pane, even when Readable line length is enabled.');
+    new Setting(el).setName('Heading defaults').setDesc('Set the default size, color and formatting of H1–H6 in Markdown notes.')
+      .addButton(button => button.setButtonText('Configure').onClick(() => new HeadingDefaultsModal(this.app, p).open()));
     heading('Sidebar and background');
     toggle('sidebar', 'Cupertino sidebar spacing and ribbon', 'Adjust the left margin when the ribbon is hidden and keep the ribbon above the sidebar when visible.');
     toggle('focusTopFolder', 'Focus on one top-level folder', 'Hide the other top-level folders while you browse. Collapse the focused folder to bring them back.');
     toggle('compactFileHeader', 'Single PDF title', 'Use the tab title and icon as the PDF heading and hide the folder path.');
     slider('sidebarInset', 'Left margin with ribbon hidden', 0, 32, 1, 'Pixels. Desktop only.');
     toggle('darker', 'Darken backgrounds');
+    if (typeof p.app.loadLocalStorage === 'function' && typeof p.app.saveLocalStorage === 'function') {
+      new Setting(el).setName('Use device-specific dimming')
+        .setDesc('Save the dark and light dimming percentages on this device. Turn off to use the shared percentages.')
+        .addToggle(t => t.setValue(p.deviceDimming?.enabled === true).onChange(enabled => {
+          if (p.setDeviceDimming(enabled)) this.display();
+          else t.setValue(!enabled);
+        }));
+    }
+    const dimmingScope = p.deviceDimming?.enabled ? 'Applies to this device.' : 'Uses the shared vault settings.';
     toggle('darkerDark', 'Enable dimming in dark theme');
-    slider('darkerAmountDark', 'Dark theme dimming (%)', 0, 100, 0.1, 'Type a percentage or use the slider. 0% = no dimming; 100% = black backgrounds.');
+    slider('darkerAmountDark', 'Dark theme dimming (%)', 0, 100, 0.1, `${dimmingScope} 0% leaves the background at its original brightness. 100% makes it black.`);
     toggle('darkerLight', 'Enable dimming in light theme');
-    slider('darkerAmountLight', 'Light theme dimming (%)', 0, 100, 0.1, 'A separate value for light theme. You can enter 12,5 or 12.5%.');
+    slider('darkerAmountLight', 'Light theme dimming (%)', 0, 100, 0.1, `${dimmingScope} You can enter 12,5 or 12.5%.`);
     slider('modalOpacityDark', 'Dark theme popup opacity (%)', 0, 100, 0.1, '0% = transparent; 100% = opaque. Applies while background dimming is enabled.');
     slider('modalOpacityLight', 'Light theme popup opacity (%)', 0, 100, 0.1);
     heading('Fonts, blockquotes and math');
@@ -788,6 +1180,213 @@ class PathColorModal extends Modal {
       .addButton(b => b.setButtonText('Follow Iconic / imported map').onClick(async () => { await this.plugin.setPathColor(this.path, null); this.close(); }));
   }
   onClose() { this.contentEl.empty(); }
+}
+
+class HeadingDefaultsModal extends Modal {
+  constructor(app, plugin) {
+    super(app);
+    this.plugin = plugin;
+    this.level = 1;
+    this.draft = Object.create(null);
+    this.saving = false;
+  }
+
+  onOpen() {
+    const el = this.contentEl;
+    el.createEl('h2', { text: 'Heading defaults' });
+    el.createEl('p', { text: 'Choose the starting style for each Markdown heading level in this vault.' });
+    new Setting(el).setName('Heading level').addDropdown(control => {
+      for (const level of HEADING_LEVELS) control.addOption(String(level), `H${level}`);
+      this.levelControl = control.setValue(String(this.level)).onChange(value => {
+        this.level = Number(value);
+        this.renderLevel();
+      });
+    });
+    this.fields = el.createDiv();
+    this.status = el.createEl('p', { attr: { role: 'status' } });
+    new Setting(el).addButton(button => {
+      this.saveButton = button.setButtonText('Save defaults').setCta().onClick(() => this.save());
+    });
+    this.renderLevel();
+  }
+
+  renderLevel() {
+    const fields = this.fields;
+    fields.empty();
+    const level = this.level;
+    const current = this.draft[level] || this.plugin.data.settings.headingDefaults[level];
+    const style = { ...current, size: String(current?.size ?? ''), color: current?.color || '' };
+    const change = (key, value) => {
+      style[key] = value;
+      this.draft[level] = style;
+      this.validate();
+    };
+    const sizeInvalid = () => !!style.size && !validHeadingSize(parseHeadingSize(style.size));
+    new Setting(fields).setName('Size (px)').setDesc(`Enter ${HEADING_SIZE_MIN}–${HEADING_SIZE_MAX}, or leave blank to follow the theme or Academic Notes.`)
+      .addText(control => {
+        control.inputEl.setAttribute('inputmode', 'decimal');
+        control.inputEl.setAttribute('aria-label', 'Heading size in pixels');
+        control.inputEl.setAttribute('aria-invalid', String(sizeInvalid()));
+        control.setValue(style.size).onChange(value => {
+          change('size', value.trim());
+          control.inputEl.setAttribute('aria-invalid', String(sizeInvalid()));
+        });
+      });
+
+    let picker, hex;
+    const syncColor = () => {
+      const valid = !style.color || headingHex(style.color);
+      hex.inputEl.setAttribute('aria-invalid', String(!valid));
+      if (headingHex(style.color)) picker.setValue(style.color);
+    };
+    new Setting(fields).setName('Color').setDesc('Choose a color or enter a hex code. Leave blank to follow the theme or Academic Notes.')
+      .addColorPicker(control => {
+        picker = control.setValue(headingHex(style.color) ? style.color : '#805ad5').onChange(value => {
+          change('color', value);
+          hex.setValue(value);
+          syncColor();
+        });
+      }).addText(control => {
+        hex = control.setPlaceholder('#805ad5').setValue(style.color).onChange(value => {
+          change('color', headingColorInput(value));
+          syncColor();
+        });
+        hex.inputEl.setAttribute('aria-label', 'Default heading color hex code');
+        hex.inputEl.spellcheck = false;
+      });
+    syncColor();
+    new Setting(fields).setName('Weight').addDropdown(control => control
+      .addOption('', 'Follow theme or Academic Notes').addOption('400', 'Regular').addOption('700', 'Bold')
+      .setValue(String(style.weight || '')).onChange(value => change('weight', value ? Number(value) : null)));
+    new Setting(fields).setName('Underline').addToggle(control => control.setValue(!!style.underline)
+      .onChange(value => change('underline', value)));
+    new Setting(fields).setName('Strikethrough').addToggle(control => control.setValue(!!style.strike)
+      .onChange(value => change('strike', value)));
+    new Setting(fields).addButton(button => button.setButtonText('Reset this level').onClick(() => {
+      this.draft[level] = { size: '', color: '' };
+      this.renderLevel();
+    }));
+    this.validate();
+  }
+
+  validate() {
+    const levels = Object.entries(this.draft);
+    const invalid = levels.find(([, style]) => (style.size && !validHeadingSize(parseHeadingSize(style.size))) ||
+      (style.color && !headingHex(style.color)));
+    this.status.setText(invalid ? `Check the size or hex color for H${invalid[0]}.` : '');
+    const valid = levels.length > 0 && !invalid;
+    this.saveButton.setDisabled(!valid || this.saving);
+    return valid;
+  }
+
+  async save() {
+    if (this.saving || !this.validate()) return;
+    const defaults = { ...this.plugin.data.settings.headingDefaults };
+    for (const [level, style] of Object.entries(this.draft)) {
+      defaults[level] = { ...style, size: style.size ? parseHeadingSize(style.size) : null };
+    }
+    this.saving = true;
+    this.fields.inert = true;
+    this.levelControl.setDisabled(true);
+    this.saveButton.setDisabled(true);
+    const saved = await this.plugin.update('headingDefaults', defaults);
+    this.saving = false;
+    this.fields.inert = false;
+    this.levelControl.setDisabled(false);
+    if (saved) this.close();
+    else this.validate();
+  }
+
+  onClose() { this.contentEl.empty(); }
+}
+
+class HeadingStyleModal extends Modal {
+  constructor(app, plugin, target) {
+    super(app);
+    this.plugin = plugin;
+    this.target = target;
+  }
+
+  onOpen() {
+    const el = this.contentEl;
+    el.createEl('h2', { text: 'Heading color and icon' });
+    el.createEl('p', { text: this.target.label });
+    const original = this.plugin.data.headingStyles[this.target.path]?.[this.target.key];
+    let color = original?.color || '';
+    let icon = original?.icon || '';
+    let picker, hex, save;
+    const syncColor = () => {
+      const valid = !color || headingHex(color);
+      hex.inputEl.setAttribute('aria-invalid', String(!valid));
+      if (headingHex(color)) picker.setValue(color);
+      save?.setDisabled(!valid);
+    };
+    new Setting(el).setName('Heading color').setDesc('Choose a color or hex code. Clear it to use the default. Fast Text Color takes priority on marked text.')
+      .addColorPicker(control => {
+        picker = control.setValue(color || '#805ad5').onChange(value => {
+          color = value;
+          hex.setValue(color);
+          syncColor();
+        });
+      }).addText(control => {
+        hex = control.setPlaceholder('#805ad5').setValue(color).onChange(value => {
+          color = headingColorInput(value);
+          syncColor();
+        });
+        hex.inputEl.setAttribute('aria-label', 'Heading color hex code');
+        hex.inputEl.spellcheck = false;
+      });
+    const iconSetting = new Setting(el).setName('Icon on the right');
+    let iconButton;
+    const updateIcon = () => {
+      iconButton.setButtonText(icon ? icon.replace(/^lucide-/, '') : 'Choose icon');
+      iconSetting.setDesc(icon ? 'Select a different icon or remove it.' : 'Search the icons available in Obsidian.');
+    };
+    iconSetting.addButton(button => {
+      iconButton = button.onClick(() => new HeadingIconModal(this.app, value => {
+        icon = value;
+        updateIcon();
+      }).open());
+    }).addExtraButton(button => button.setIcon('x').setTooltip('Remove icon').onClick(() => {
+      icon = '';
+      updateIcon();
+    }));
+    updateIcon();
+    new Setting(el).addButton(button => {
+      save = button.setButtonText('Save').setCta().onClick(async () => {
+        if (color && !headingHex(color)) return;
+        save.setDisabled(true);
+        if (await this.plugin.setHeadingStyle(this.target, { color, icon })) this.close();
+        else syncColor();
+      });
+    });
+  }
+
+  onClose() { this.contentEl.empty(); }
+}
+
+class HeadingIconModal extends SuggestModal {
+  constructor(app, choose) {
+    super(app);
+    this.choose = choose;
+    this.icons = getIconIds().sort();
+    this.setPlaceholder('Search icons, e.g. book, map, bot');
+    this.limit = 60;
+  }
+
+  getSuggestions(query) {
+    const term = query.trim().toLowerCase().replace(/^lucide-/, '').replace(/\s+/g, '-');
+    const matches = this.icons.filter(icon => icon.replace(/^lucide-/, '').toLowerCase().includes(term));
+    return matches.slice(0, this.limit);
+  }
+
+  renderSuggestion(icon, el) {
+    const row = el.createDiv({ cls: 'ctk-heading-icon-option' });
+    setIcon(row.createSpan(), icon);
+    row.createSpan({ text: icon.replace(/^lucide-/, '') });
+  }
+
+  onChooseSuggestion(icon) { this.choose(icon); }
 }
 
 class ColorListModal extends Modal {
