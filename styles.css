@@ -75,6 +75,21 @@ body.ctk-active.ctk-math :is(.markdown-preview-view, .markdown-source-view.mod-c
 
 /* Keep note styling and line width independent, and scope them to Markdown panes. */
 @media screen {
+  body.ctk-active.ctk-note-right-inset .workspace-leaf-content[data-type="markdown"] > .view-content
+    > :is(.markdown-reading-view > .markdown-preview-view, .markdown-source-view.mod-cm6 > .cm-editor > .cm-scroller) {
+    padding-right: min(var(--ctk-note-right-inset), 45%) !important;
+  }
+
+  body.ctk-active.ctk-stable-editing-toolbar :is(#editingToolbarModalBar, #editingToolbarPopoverBar),
+  body.ctk-active.ctk-stable-editing-toolbar :is(#editingToolbarModalBar, #editingToolbarPopoverBar) svg {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  body.ctk-active.ctk-stable-editing-toolbar #editingToolbarModalBar.top.autohide {
+    opacity: 1 !important;
+  }
+
   body.ctk-active.ctk-full-width-notes .workspace-leaf-content[data-type="markdown"]
     :is(.view-content > .markdown-reading-view > .markdown-preview-view, .view-content > .markdown-source-view.mod-cm6) {
     --file-line-width: 100%;
