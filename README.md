@@ -1,10 +1,10 @@
-# Toolkit — 1.7.0
+# Toolkit — 1.8.0
 
 Ein flytjanleg Obsidian-viðbót sem sameinar útlit og virkni úr CSS-snippunum þínum og Top-Level Icon Name Sync. Stillingar og val fyrir skrár vistast í viðbótarmöppunni. Ekki þarf að byggja eða þýða kóðann.
 
 ## Setja upp
 
-1. Sæktu `main.js`, `manifest.json` og `styles.css` úr [Toolkit 1.7.0](https://github.com/H798979/cupertino-toolkit/releases/tag/1.7.0).
+1. Sæktu `main.js`, `manifest.json` og `styles.css` úr [nýjustu útgáfu Toolkit](https://github.com/H798979/Toolkit/releases/latest).
 2. Settu skrárnar í `<safnið þitt>/.obsidian/plugins/cupertino-toolkit/`. Ef safnið notar annað stillingamöppuheiti en `.obsidian` skaltu nota það í staðinn.
 3. Í Obsidian skaltu fara í **Settings → Community plugins**, endurhlaða viðbótalistanum eða endurræsa Obsidian og virkja **Toolkit**. Community plugins þurfa að vera leyfð.
 4. Slökktu á þessum eldri CSS-snippum í **Settings → Appearance → CSS snippets**: `cupertino-sidebar-spacing`, `darker-theme`, `iconic-colored-names`, `pdf-dark-mode` og `sf-pro`.
@@ -25,6 +25,18 @@ Opnaðu **Settings → Toolkit → Markdown notes**. Rofarnir byrja slökktir og
 - **Full-width notes** nýtir breidd glósuflatarins með spássíum þemans, líka þegar **Readable line length** er virkt. Þegar slökkt er á rofanum ræður Obsidian aftur breiddinni.
 
 Útlitið gildir sjálfkrafa um Markdown-glósur í safninu. Í nýrri glósu notarðu `#` fyrir aðalkafla, `##` fyrir undirkafla og `###` fyrir smærri liði. Skráarheitið birtist ef kveikt er á **Settings → Appearance → Show inline title**.
+
+## Kaflaskil, bil og hægri spássía
+
+Undir **Settings → Toolkit → Markdown notes** er **End heading folds at separators** sjálfgefið virkt. Kveiktu líka á **Fold heading** í Obsidian. Markdown-skil eins og `---`, `***` og `___` loka næsta opna kafla fyrir ofan. Textinn á eftir línunni helst sýnilegur þegar þú fellir þann kafla saman, bæði í Reading view og í ritlinum. Settu tóma línu fyrir ofan `---` svo Obsidian lesi það sem skilalínu.
+
+Þú getur líka notað strikalínu eins og `—-` eða valið eigið merki undir **Custom heading end marker**. Settu merkið á eigin línu með tóma línu fyrir ofan. Ef texti kemur á næstu línu birtist merkið áfram með textanum í Reading view. Innri skil loka næsta undirkafla og eldri yfirfyrirsögn heldur áfram að ná utan um sinn kafla.
+
+Í **Heading defaults → Configure** stillirðu **Space below heading (px)** sérstaklega fyrir H1–H5. Auður reitur fylgir núverandi útliti. Með **Use custom right margin** geturðu stillt **Right margin (px)** í Reading view og í ritlinum. Rofinn **Full-width notes** stjórnar áfram línubreiddinni.
+
+**Stabilize Editing Toolbar** slökkvir á hreyfingum á Editing Toolbar og heldur efstu tækjastikunni sýnilegri í ritlinum þegar hún notar sjálfvirka felun. Slökktu á rofanum ef þú vilt nota sjálfvirku felunina aftur.
+
+Undir **Folders, file names and links** felur **Hide image files in File Explorer** myndaskrár sjálfkrafa í skráalista Obsidian, líka þegar þeim er bætt við síðar. Myndir inni í glósum og slóðir í skrárnar virka áfram. Notebook Navigator er með eigin **Hide files** stillingu.
 
 ## Exam Notes
 

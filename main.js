@@ -2,7 +2,8 @@
 
 const { Plugin, PluginSettingTab, Setting, Menu, Modal, SuggestModal, Notice, TFile, TFolder,
   editorInfoField, editorLivePreviewField, getIcon, getIconIds, setIcon } = require('obsidian');
-const { StateEffect } = require('@codemirror/state');
+const { EditorState, Prec, StateEffect } = require('@codemirror/state');
+const { ensureSyntaxTree, foldEffect, foldService, syntaxTree, tokenClassNodeProp } = require('@codemirror/language');
 const { Decoration, ViewPlugin } = require('@codemirror/view');
 
 // Built from all five supplied Iconic CSS versions. Newest definitions win.
@@ -14,6 +15,8 @@ const DEFAULTS = Object.freeze({
   sfPro: true, quotes: true, quoteColor: '#ffffff', quoteBar: '#ffffff',
   math: true, mathScale: 128,
   academicNotes: false, examNotes: false, examNotesPath: 'Eksamen', fullWidthNotes: false,
+  foldAtSeparators: true, headingEndMarker: '', customRightInset: false, noteRightInset: 32,
+  hideImageFiles: true, stabilizeEditingToolbar: true,
   folderTypography: true, folderSize1: 1.30, folderSize2: 1.04,
   folderSize3: 0.958, folderSize4: 0.921,
   folderWeight1: 700, folderWeight2: 800, folderWeight3: 700, folderWeight4: 700,
@@ -27,6 +30,7 @@ const DEFAULTS = Object.freeze({
 });
 const RANGES = {
   sidebarInset: [0, 32], darkerAmountDark: [0, 100], darkerAmountLight: [0, 100],
+  noteRightInset: [0, 240],
   modalOpacityDark: [0, 100], modalOpacityLight: [0, 100], mathScale: [80, 200],
   folderSize1: [0.5, 2], folderSize2: [0.5, 2], folderSize3: [0.5, 2], folderSize4: [0.5, 2],
   folderWeight1: [100, 900], folderWeight2: [100, 900], folderWeight3: [100, 900], folderWeight4: [100, 900],
@@ -43,11 +47,11 @@ const PALETTE = {
   gray: ['--color-base-60', '#888888'], emerald: [null, '#4cc38a'],
   gold: [null, '#c9933e'], teal: [null, '#00b386']
 };
-const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'avif', 'svg', 'tif', 'tiff']);
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'avif', 'svg', 'tif', 'tiff', 'apng', 'ico', 'heic', 'heif', 'jxl', 'jfif']);
 const OWN_CLASSES = ['ctk-active', 'ctk-sidebar', 'ctk-darker', 'ctk-darker-dark', 'ctk-darker-light',
   'ctk-sf-pro', 'ctk-quotes', 'ctk-math', 'ctk-typography', 'ctk-pdf-dark', 'ctk-image-dark',
   'ctk-nn-pdf', 'ctk-nn-md', 'ctk-nn-all', 'ctk-webview', 'ctk-svg-plate', 'ctk-overrides', 'ctk-compact-header',
-  'ctk-academic-notes', 'ctk-full-width-notes'];
+  'ctk-academic-notes', 'ctk-full-width-notes', 'ctk-note-right-inset', 'ctk-stable-editing-toolbar'];
 const MEDIA_CLASSES = ['ctk-light', 'ctk-dark', 'ctk-plate', 'ctk-pdf-light', 'ctk-pdf-force-dark', 'ctk-pdf-thumb'];
 const COLOR_PROPS = ['--ctk-label-color', '--ctk-link-color'];
 const HEADING_CLASSES = ['ctk-heading-colored', 'ctk-heading-icon'];
@@ -56,10 +60,14 @@ const HEADING_TITLE = 'title';
 const HEADING_LEVELS = [1, 2, 3, 4, 5, 6];
 const HEADING_SIZE_MIN = 8;
 const HEADING_SIZE_MAX = 120;
+const HEADING_GAP_MAX = 96;
+const EDITING_TOOLBAR_SELECTOR = '#editingToolbarModalBar, #editingToolbarPopoverBar';
 const NOTE_TITLE_SELECTOR = ':scope > .markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .mod-header > .inline-title:not([data-level]), :scope > .markdown-source-view.mod-cm6 > .cm-editor > .cm-scroller > .cm-sizer > .inline-title:not([data-level])';
 const readingHeading = level => `.markdown-reading-view > .markdown-preview-view > .markdown-preview-sizer > .el-h${level} > h${level}`;
 const READING_HEADING_SELECTOR = HEADING_LEVELS.map(level => ':scope > ' + readingHeading(level)).join(', ');
 const HEADING_TARGETS = '.inline-title, h1, h2, h3, h4, h5, h6';
+const ATX_HEADING = /^ {0,3}(#{1,6})(?:[\t ]|$)/;
+const SETEXT_UNDERLINE = /^ {0,3}(=+|-+)[\t ]*$/;
 const headingStyleChanged = StateEffect.define();
 const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 const plain = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -74,6 +82,7 @@ const cleanMap = (input, accept) => {
 };
 const headingHex = value => typeof value === 'string' && /^#[\da-f]{6}$/i.test(value);
 const validHeadingSize = value => Number.isFinite(value) && value >= HEADING_SIZE_MIN && value <= HEADING_SIZE_MAX;
+const validHeadingGap = value => Number.isFinite(value) && value >= 0 && value <= HEADING_GAP_MAX;
 const parseHeadingSize = value => /^\d+(?:[.,]\d+)?$/.test(value) ? Number(value.replace(',', '.')) : NaN;
 function headingColorInput(value) {
   const trimmed = value.trim();
@@ -91,7 +100,8 @@ function cleanHeadingDefaults(input) {
     const weight = [400, 700].includes(style.weight) ? style.weight : null;
     const underline = style.underline === true;
     const strike = style.strike === true;
-    if (size || color || weight || underline || strike) defaults[level] = { size, color, weight, underline, strike };
+    const gap = level <= 5 && validHeadingGap(style.gap) ? style.gap : null;
+    if (size || color || weight || underline || strike || gap !== null) defaults[level] = { size, color, weight, underline, strike, gap };
   }
   return defaults;
 }
@@ -118,7 +128,17 @@ function headingDefaultsCss(defaults = {}) {
       declarations.push(`--ctk-heading-default-color:${style.color}`, `--ctk-academic-accent:${color}`, foreground);
       rules.push(`${selectors.map(selector => selector + ' ' + text).join(',\n')} {${foreground};}`);
     }
-    rules.push(`${selectors.join(',\n')} {${declarations.join(';')};}`);
+    if (declarations.length) rules.push(`${selectors.join(',\n')} {${declarations.join(';')};}`);
+    if (validHeadingGap(style.gap)) {
+      const gap = `${style.gap}px`;
+      const wrapper = scope + readingHeading(level).replace(/ > h[1-6]$/, '');
+      const editor = selectors[1].slice(0, -`.HyperMD-header-${level}`.length);
+      const endingLine = `:is(.HyperMD-header-${level}:not(:has(+ .HyperMD-header-line-${level})), .HyperMD-header-line-${level})`;
+      rules.push(`${selectors[0]} {margin-bottom:${gap} !important;}`);
+      rules.push(`${wrapper} + div:not(.mod-ui, .el-h1, .el-h2, .el-h3, .el-h4, .el-h5, .el-h6) > :first-child {margin-top:0 !important;}`);
+      rules.push(`${editor}${endingLine} {padding-bottom:${gap} !important;border-bottom-width:0 !important;}`);
+      rules.push(`${editor}${endingLine} + .cm-line:not(.HyperMD-header, :has(>br:only-child)) {padding-top:0 !important;}`);
+    }
   }
   return rules.length ? '\n@media screen {\n' + rules.join('\n') + '\n}' : '';
 }
@@ -158,6 +178,46 @@ function headingOnLine(doc, entry) {
   return (entry.level === 1 ? /^ {0,3}=+\s*$/ : /^ {0,3}-+\s*$/).test(underline);
 }
 
+function isMarkdownRule(line) {
+  return /^ {0,3}(?:(?:-[\t ]*){3,}|(?:\*[\t ]*){3,}|(?:_[\t ]*){3,})$/.test(line);
+}
+
+function isPlainSeparator(line, marker) {
+  const text = line.trim();
+  return !!text && !/^(?: {4}|\t)/.test(line) &&
+    (text === marker || (/^[-–—]{2,}$/.test(text) && /[–—]/.test(text)));
+}
+
+// A separator closes the nearest still-open heading, leaving its parent open.
+function sectionBreaks(events) {
+  const breaks = new Map();
+  const open = [];
+  for (const event of events) {
+    if (event.level) {
+      while (open.length && open[open.length - 1].level >= event.level) open.pop();
+      open.push(event);
+    } else if (open.length) {
+      breaks.set(open.pop().line, event.line);
+    }
+  }
+  return breaks;
+}
+
+function previewBreaks(sections, lines, marker) {
+  const events = [];
+  for (const section of sections) {
+    if (typeof section.html !== 'string' || !section.html) continue;
+    const line = section.start.line;
+    if (section.level >= 1 && section.level <= 6) {
+      events.push({ line, level: section.level });
+    } else if ((/^<hr(?:\s|\/?>)/i.test(section.html) && isMarkdownRule(lines[line] || '')) ||
+      (/^<p(?:\s|>)/i.test(section.html) && isPlainSeparator(lines[line] || '', marker))) {
+      events.push({ line });
+    }
+  }
+  return sectionBreaks(events);
+}
+
 function normalizeData(input) {
   const raw = plain(input) ? input : {};
   const sourceSettings = plain(raw.settings) ? { ...raw.settings } : {};
@@ -171,6 +231,8 @@ function normalizeData(input) {
     const value = sourceSettings[key];
     if (key === 'examNotesPath') {
       if (typeof value === 'string') settings[key] = value.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+    } else if (key === 'headingEndMarker') {
+      if (typeof value === 'string' && !/[\r\n]/.test(value)) settings[key] = value.trim().slice(0, 100);
     } else if (typeof fallback === 'boolean' && typeof value === 'boolean') settings[key] = value;
     else if (typeof fallback === 'number' && typeof value === 'number' && Number.isFinite(value)) {
       const [min, max] = RANGES[key];
@@ -192,6 +254,8 @@ module.exports = class CupertinoToolkit extends Plugin {
     this.folderFocus = new Map();
     this.colorCache = new Map();
     this.headingIndexes = new WeakMap();
+    this.editorBreakCache = new WeakMap();
+    this.readingFolds = new Map();
     this.headingIcons = new Map();
     this.dirtyColors = true;
     this.timer = null;
@@ -205,7 +269,7 @@ module.exports = class CupertinoToolkit extends Plugin {
     } else if (saved.version !== 2) await this.persist();
     this.addSettingTab(new ToolkitSettings(this.app, this));
     this.headingExtension = this.createHeadingExtension();
-    this.registerEditorExtension(this.headingExtension);
+    this.registerEditorExtension([this.headingExtension, this.createFoldExtension()]);
     this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, view) => {
       const target = this.editorHeading(editor, view);
       if (target) this.addHeadingMenuItem(menu, target);
@@ -388,6 +452,12 @@ module.exports = class CupertinoToolkit extends Plugin {
       let dirty = false, changed = false;
       for (const record of records) {
         if (record.target === style || style.contains(record.target)) continue;
+        // Toolbar visibility, icon animations and overflow rearrangement do not affect note styling.
+        if (record.target.closest?.(EDITING_TOOLBAR_SELECTOR)) continue;
+        if (record.type === 'childList') {
+          const nodes = [...record.addedNodes, ...record.removedNodes];
+          if (nodes.length && nodes.every(node => node.matches?.(EDITING_TOOLBAR_SELECTOR))) continue;
+        }
         if (record.type === 'attributes') {
           // Ignore only our own attribute changes. External icon/style changes still refresh.
           const element = record.target;
@@ -445,12 +515,13 @@ module.exports = class CupertinoToolkit extends Plugin {
       this.applyLabels(doc);
     }
     const explorers = new Set();
+    const renderers = new Set();
     this.app.workspace.iterateAllLeaves(leaf => {
       const view = leaf.view;
       const root = view?.containerEl;
       if (!root) return;
       const type = view.getViewType?.();
-      if (type === 'file-explorer' && this.data.settings.focusTopFolder) {
+      if (type === 'file-explorer' && (this.data.settings.focusTopFolder || this.data.settings.hideImageFiles)) {
         explorers.add(view);
         this.applyFolderFocus(view);
       }
@@ -459,13 +530,21 @@ module.exports = class CupertinoToolkit extends Plugin {
         const { examNotes, examNotesPath } = this.data.settings;
         const matches = examNotesPath && (source === examNotesPath || source.startsWith(examNotesPath + '/'));
         root.classList.toggle('ctk-exam-note', examNotes && !!matches);
-        if (source) this.applyHeadingStyles(view, source);
+        if (source) {
+          this.applyHeadingStyles(view, source);
+          const renderer = view.previewMode?.renderer;
+          if (renderer && this.data.settings.foldAtSeparators) {
+            renderers.add(renderer);
+            this.patchReadingFolds(renderer);
+          }
+        }
       }
       if (type === 'pdf') this.stampMedia(root, this.data.pdfs[source], true);
       this.applyImages(root, source);
       this.applyLinks(root, source);
     });
     for (const view of this.folderFocus.keys()) if (!explorers.has(view)) this.clearFolderFocus(view);
+    for (const renderer of this.readingFolds.keys()) if (!renderers.has(renderer)) this.restoreReadingFolds(renderer);
     for (const doc of this.documents.keys()) {
       for (const root of doc.querySelectorAll('.hover-popover, .modal-container')) {
         this.applyImages(root, this.sourceFor(root));
@@ -481,15 +560,17 @@ module.exports = class CupertinoToolkit extends Plugin {
     const root = this.app.vault.getRoot();
     let state = this.folderFocus.get(view);
     if (!state) {
-      state = { open: new Set(), folder: null, original: tree.applySearchFilter };
+      state = { open: new Set(), folder: null, hideImages: false, original: tree.applySearchFilter };
       // Use the explorer's own filter so keyboard navigation and virtual scrolling follow visibility.
       state.filter = function (...args) {
-        if (!state.folder || this.filter) return state.original.apply(this, args);
-        const path = state.folder.path;
         const previous = this.filter;
+        const path = !previous && state.folder?.path;
+        if (!path && !state.hideImages) return state.original.apply(this, args);
         this.filter = item => {
           const file = item.file;
-          return !file || file.path === path || file.path.startsWith(path + '/') ||
+          if (state.hideImages && file instanceof TFile && IMAGE_EXTS.has(extension(file.path))) return false;
+          if (previous) return previous(item);
+          return !path || !file || file.path === path || file.path.startsWith(path + '/') ||
             (file.parent === root && !(file instanceof TFolder));
         };
         try { return state.original.apply(this, args); }
@@ -501,17 +582,20 @@ module.exports = class CupertinoToolkit extends Plugin {
     const open = new Set(root.children.filter(file =>
       file instanceof TFolder && view.fileItems[file.path]?.collapsed === false));
     const opened = [...open].filter(file => !state.open.has(file));
-    const folder = opened.length === 1 ? opened[0] :
-      opened.length === 0 && open.has(state.folder) ? state.folder : null;
-    state.open = open;
-    if (state.folder === folder) return;
+    const { focusTopFolder, hideImageFiles } = this.data.settings;
+    const folder = focusTopFolder ? (opened.length === 1 ? opened[0] :
+      opened.length === 0 && open.has(state.folder) ? state.folder : null) : null;
+    state.open = focusTopFolder ? open : new Set();
+    if (state.folder === folder && state.hideImages === hideImageFiles) return;
     state.folder = folder;
+    state.hideImages = hideImageFiles;
     tree.applySearchFilter();
   }
 
   clearFolderFocus(view) {
     const state = this.folderFocus.get(view);
     state.folder = null;
+    state.hideImages = false;
     if (view.tree.applySearchFilter === state.filter) view.tree.applySearchFilter = state.original;
     view.tree.applySearchFilter();
     this.folderFocus.delete(view);
@@ -524,12 +608,13 @@ module.exports = class CupertinoToolkit extends Plugin {
       'ctk-darker-dark': s.darkerDark, 'ctk-darker-light': s.darkerLight, 'ctk-sf-pro': s.sfPro,
       'ctk-quotes': s.quotes, 'ctk-math': s.math, 'ctk-typography': s.folderTypography,
       'ctk-academic-notes': s.academicNotes, 'ctk-full-width-notes': s.fullWidthNotes,
+      'ctk-note-right-inset': s.customRightInset, 'ctk-stable-editing-toolbar': s.stabilizeEditingToolbar,
       'ctk-pdf-dark': s.pdfDark, 'ctk-image-dark': false, 'ctk-nn-pdf': s.navigatorPdf,
       'ctk-nn-md': false, 'ctk-nn-all': false, 'ctk-webview': s.webview,
       'ctk-svg-plate': false, 'ctk-overrides': s.mediaOverrides };
     for (const [key, value] of Object.entries(toggles)) if (doc.body.classList.contains(key) !== value) doc.body.classList.toggle(key, value);
     const vars = { 'sidebar-inset': s.sidebarInset + 'px', 'darker-amount': this.settingValue('darkerAmountDark') + '%',
-      'modal-opacity': s.modalOpacityDark + '%',
+      'modal-opacity': s.modalOpacityDark + '%', 'note-right-inset': s.noteRightInset + 'px',
       'quote-color': s.quoteColor, 'quote-bar': s.quoteBar, 'math-scale': s.mathScale + '%',
       'pdf-invert': s.pdfInvert, 'pdf-contrast': s.pdfContrast, 'image-invert': s.imageInvert,
       'image-contrast': s.imageContrast, 'plate-bg': s.plateDark };
@@ -541,6 +626,122 @@ module.exports = class CupertinoToolkit extends Plugin {
       `body.ctk-active.theme-light {--ctk-plate-bg:${s.plateLight};--ctk-darker-amount:${this.settingValue('darkerAmountLight')}%;--ctk-modal-opacity:${s.modalOpacityLight}%;}` +
       headingDefaultsCss(s.headingDefaults);
     if (style.textContent !== css) style.textContent = css;
+  }
+
+  editorBreaks(state) {
+    const { doc } = state;
+    const { headingEndMarker: marker } = this.data.settings;
+    const cached = this.editorBreakCache.get(doc);
+    const currentTree = syntaxTree(state);
+    if (cached?.marker === marker && (cached.complete || cached.tree === currentTree)) return cached.breaks;
+
+    const candidates = [];
+    let lastSeparator = 0;
+    for (let number = 1; number <= doc.lines; number++) {
+      const line = doc.line(number);
+      const atx = ATX_HEADING.exec(line.text);
+      const setext = number > 1 && SETEXT_UNDERLINE.exec(line.text);
+      const rule = isMarkdownRule(line.text);
+      const previous = number > 1 ? doc.line(number - 1).text : '';
+      const plain = isPlainSeparator(line.text, marker) && (!previous.trim() || ATX_HEADING.test(previous));
+      if (atx || setext || rule || plain) candidates.push({ line, atx, setext, rule, plain });
+      if (rule || plain) lastSeparator = line.to;
+    }
+    const tree = lastSeparator ? ensureSyntaxTree(state, lastSeparator, 20) || currentTree : currentTree;
+    const events = [];
+    for (const { line, atx, setext, rule, plain } of candidates) {
+      if (line.to > lastSeparator || line.to > tree.length) break;
+      const first = line.from + line.text.search(/\S/);
+      const node = tree.resolve(first, 1);
+      const tokens = tokenClassNodeProp ? node.type.prop(tokenClassNodeProp) || '' : node.name.replace(/_/g, ' ');
+      if (/\b(?:hmd-codeblock|hmd-frontmatter|hmd-indented-code|math|comment|quote|list-\d+)\b/.test(tokens)) continue;
+      if (/\bheader\b/.test(tokens)) {
+        if (atx) events.push({ line: line.number, level: atx[1].length });
+        else if (setext) events.push({ line: line.number - 1, level: setext[1][0] === '=' ? 1 : 2 });
+      } else if ((rule && /\bhr\b/.test(tokens)) || plain) {
+        events.push({ line: line.number });
+      }
+    }
+    const breaks = sectionBreaks(events);
+    this.editorBreakCache.set(doc, { marker, tree, complete: tree.length >= lastSeparator, breaks });
+    return breaks;
+  }
+
+  createFoldExtension() {
+    const enabled = () => this.data.settings.foldAtSeparators && this.app.vault.getConfig?.('foldHeading') !== false;
+    const limit = (state, from) => {
+      if (!enabled()) return null;
+      const heading = state.doc.lineAt(from);
+      if (from !== heading.to && from !== heading.from) return null;
+      if (!ATX_HEADING.test(heading.text) &&
+        (heading.number === state.doc.lines || !SETEXT_UNDERLINE.test(state.doc.line(heading.number + 1).text))) return null;
+      const line = this.editorBreaks(state).get(heading.number);
+      return line ? state.doc.line(line).to : null;
+    };
+    const service = foldService.of((state, from, to) => {
+      const end = limit(state, from);
+      return end !== null && end > to ? { from: to, to: end } : null;
+    });
+    // Obsidian can reapply a saved range on view switches. Clamp old ranges to the current separator.
+    const restore = EditorState.transactionFilter.of(tr => {
+      if (!enabled() || !tr.effects.some(effect => effect.is(foldEffect))) return tr;
+      let changed = false;
+      const effects = tr.effects.map(effect => {
+        if (!effect.is(foldEffect)) return effect;
+        const { from, to } = effect.value;
+        const end = limit(tr.state, from);
+        if (end === null || to <= end) return effect;
+        changed = true;
+        return foldEffect.of({ from, to: end });
+      });
+      return changed ? { changes: tr.changes, selection: tr.selection, effects,
+        annotations: tr.annotations, scrollIntoView: tr.scrollIntoView } : tr;
+    });
+    return [Prec.highest(service), restore];
+  }
+
+  patchReadingFolds(renderer) {
+    if (!Array.isArray(renderer.sections) || typeof renderer.updateShownSections !== 'function') return;
+    const marker = this.data.settings.headingEndMarker;
+    const patched = this.readingFolds.get(renderer);
+    if (patched) {
+      if (patched.marker !== marker) {
+        patched.marker = marker;
+        renderer.queueRender?.();
+      }
+      return;
+    }
+    const state = { marker, original: renderer.updateShownSections };
+    state.update = function (...args) {
+      if (!Array.isArray(this.sections) || typeof this.lastText !== 'string') return state.original.apply(this, args);
+      if (state.sections !== this.sections || state.text !== this.lastText || state.cachedMarker !== state.marker) {
+        state.sections = this.sections;
+        state.text = this.lastText;
+        state.cachedMarker = state.marker;
+        state.breaks = previewBreaks(this.sections, this.lastText.split(/\r?\n/), state.marker);
+      }
+      if (!state.breaks.size) return state.original.apply(this, args);
+      let folded = null;
+      for (const section of this.sections) {
+        // A plain-text marker can be the first line of a paragraph. Keep the whole
+        // paragraph visible if its following lines share the same rendered section.
+        if (folded && (section.level <= folded.level || section.end.line > folded.end)) folded = null;
+        section.shown = !folded;
+        if (!folded && section.headingCollapsed) {
+          folded = { level: section.level, end: state.breaks.get(section.start.line) ?? Infinity };
+        }
+      }
+    };
+    renderer.updateShownSections = state.update;
+    this.readingFolds.set(renderer, state);
+    renderer.queueRender?.();
+  }
+
+  restoreReadingFolds(renderer) {
+    const state = this.readingFolds.get(renderer);
+    if (renderer.updateShownSections === state.update) renderer.updateShownSections = state.original;
+    this.readingFolds.delete(renderer);
+    renderer.queueRender?.();
   }
 
   headingIndex(path) {
@@ -1028,6 +1229,7 @@ module.exports = class CupertinoToolkit extends Plugin {
     this.stopped = true;
     if (this.timer !== null) clearTimeout(this.timer);
     for (const view of this.folderFocus?.keys() || []) this.clearFolderFocus(view);
+    for (const renderer of this.readingFolds?.keys() || []) this.restoreReadingFolds(renderer);
     for (const doc of this.documents?.keys() || []) this.detachDocument(doc);
     this.colorCache?.clear();
   }
@@ -1084,7 +1286,18 @@ class ToolkitSettings extends PluginSettingTab {
       .addText(t => t.setPlaceholder('Eksamen').setValue(p.data.settings.examNotesPath)
         .onChange(value => p.update('examNotesPath', value)));
     toggle('fullWidthNotes', 'Full-width notes', 'Use the available width of the Markdown pane, even when Readable line length is enabled.');
-    new Setting(el).setName('Heading defaults').setDesc('Set the default size, color and formatting of H1–H6 in Markdown notes.')
+    toggle('foldAtSeparators', 'End heading folds at separators', 'A Markdown horizontal rule or a standalone dash separator ends the closest heading above it. Turn on Fold heading in Obsidian.');
+    new Setting(el).setName('Custom heading end marker')
+      .setDesc('Enter the exact text to use as a separator. Put it on its own line after an empty line.')
+      .addText(t => {
+        t.inputEl.maxLength = 100;
+        t.setPlaceholder('END OF SECTION').setValue(p.data.settings.headingEndMarker)
+          .onChange(value => p.update('headingEndMarker', value));
+      });
+    toggle('customRightInset', 'Use custom right margin', 'Set the right padding of Markdown panes in Reading and editing views.');
+    slider('noteRightInset', 'Right margin (px)', 0, 240, 1, 'Applies when Use custom right margin is on.');
+    toggle('stabilizeEditingToolbar', 'Stabilize Editing Toolbar', 'Turn off toolbar animations and keep the top bar steady when the toolbar uses auto-hide.');
+    new Setting(el).setName('Heading defaults').setDesc('Set size, color and formatting for H1–H6, and the space below H1–H5.')
       .addButton(button => button.setButtonText('Configure').onClick(() => new HeadingDefaultsModal(this.app, p).open()));
     heading('Sidebar and background');
     toggle('sidebar', 'Cupertino sidebar spacing and ribbon', 'Adjust the left margin when the ribbon is hidden and keep the ribbon above the sidebar when visible.');
@@ -1115,6 +1328,7 @@ class ToolkitSettings extends PluginSettingTab {
     toggle('math', 'Resize math formulas');
     slider('mathScale', 'Math size (%)', 80, 200, 1);
     heading('Folders, file names and links');
+    toggle('hideImageFiles', 'Hide image files in File Explorer', 'Hide existing and new image files in all folders. Embedded images stay visible in notes.');
     toggle('folderTypography', 'Custom folder typography');
     for (let level = 1; level <= 4; level++) {
       slider(`folderSize${level}`, `Font size: folder depth ${level}${level === 4 ? '+' : ''}`, 0.5, 2, 0.001, 'Multiplier of the normal font size.');
@@ -1215,7 +1429,7 @@ class HeadingDefaultsModal extends Modal {
     fields.empty();
     const level = this.level;
     const current = this.draft[level] || this.plugin.data.settings.headingDefaults[level];
-    const style = { ...current, size: String(current?.size ?? ''), color: current?.color || '' };
+    const style = { ...current, size: String(current?.size ?? ''), gap: String(current?.gap ?? ''), color: current?.color || '' };
     const change = (key, value) => {
       style[key] = value;
       this.draft[level] = style;
@@ -1232,6 +1446,20 @@ class HeadingDefaultsModal extends Modal {
           control.inputEl.setAttribute('aria-invalid', String(sizeInvalid()));
         });
       });
+
+    if (level <= 5) {
+      const gapInvalid = () => !!style.gap && !validHeadingGap(parseHeadingSize(style.gap));
+      new Setting(fields).setName('Space below heading (px)')
+        .setDesc(`Enter 0–${HEADING_GAP_MAX}, or leave blank to follow the note style.`)
+        .addText(control => {
+          control.inputEl.setAttribute('inputmode', 'decimal');
+          control.inputEl.setAttribute('aria-invalid', String(gapInvalid()));
+          control.setValue(style.gap).onChange(value => {
+            change('gap', value.trim());
+            control.inputEl.setAttribute('aria-invalid', String(gapInvalid()));
+          });
+        });
+    }
 
     let picker, hex;
     const syncColor = () => {
@@ -1263,7 +1491,7 @@ class HeadingDefaultsModal extends Modal {
     new Setting(fields).setName('Strikethrough').addToggle(control => control.setValue(!!style.strike)
       .onChange(value => change('strike', value)));
     new Setting(fields).addButton(button => button.setButtonText('Reset this level').onClick(() => {
-      this.draft[level] = { size: '', color: '' };
+      this.draft[level] = { size: '', gap: '', color: '' };
       this.renderLevel();
     }));
     this.validate();
@@ -1272,8 +1500,8 @@ class HeadingDefaultsModal extends Modal {
   validate() {
     const levels = Object.entries(this.draft);
     const invalid = levels.find(([, style]) => (style.size && !validHeadingSize(parseHeadingSize(style.size))) ||
-      (style.color && !headingHex(style.color)));
-    this.status.setText(invalid ? `Check the size or hex color for H${invalid[0]}.` : '');
+      (style.gap && !validHeadingGap(parseHeadingSize(style.gap))) || (style.color && !headingHex(style.color)));
+    this.status.setText(invalid ? `Check the size, spacing or hex color for H${invalid[0]}.` : '');
     const valid = levels.length > 0 && !invalid;
     this.saveButton.setDisabled(!valid || this.saving);
     return valid;
@@ -1283,7 +1511,8 @@ class HeadingDefaultsModal extends Modal {
     if (this.saving || !this.validate()) return;
     const defaults = { ...this.plugin.data.settings.headingDefaults };
     for (const [level, style] of Object.entries(this.draft)) {
-      defaults[level] = { ...style, size: style.size ? parseHeadingSize(style.size) : null };
+      defaults[level] = { ...style, size: style.size ? parseHeadingSize(style.size) : null,
+        gap: style.gap ? parseHeadingSize(style.gap) : null };
     }
     this.saving = true;
     this.fields.inert = true;
